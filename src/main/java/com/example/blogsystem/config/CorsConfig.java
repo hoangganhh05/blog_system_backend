@@ -15,12 +15,8 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // Cho phép các nguồn frontend dev
-        config.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "http://localhost:3000",
-                "http://127.0.0.1:5173"
-        ));
+        // Cho phép tất cả các tên miền Frontend (Localhost & Netlify & Vercel)
+        config.addAllowedOriginPattern("*");
 
         // Cho phép tất cả phương thức HTTP (bao gồm OPTIONS preflight)
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
