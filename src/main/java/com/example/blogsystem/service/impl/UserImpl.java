@@ -1,0 +1,149 @@
+package com.example.blogsystem.service.impl;
+
+import com.example.blogsystem.entity.Post;
+import com.example.blogsystem.entity.User;
+import com.example.blogsystem.repository.PostLikeRepository;
+import com.example.blogsystem.repository.PostRepository;
+import com.example.blogsystem.repository.UserRepository;
+import com.example.blogsystem.service.UserService;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+public class UserImpl implements UserService {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final PostRepository postRepository;
+    private final PostLikeRepository postLikeRepository;
+
+    public UserImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, PostRepository postRepository, PostLikeRepository postLikeRepository) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.postRepository = postRepository;
+        this.postLikeRepository = postLikeRepository;
+    }
+
+    @Override
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+    @Override
+    public User getUserById(Long id) {
+        return userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+    }
+    @Override
+    public User createUser(User user) {
+        String hash = passwordEncoder.encode(user.getPassword());
+        user.setPassword(hash);
+        user.setCreatedAt(LocalDateTime.now());
+        return userRepository.save(user);
+    }
+    @Override
+    public User updateUser(Long id, User user) {
+        User existingUser = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getFullName() != null) existingUser.setFullName(user.getFullName());
+        if (user.getEmail() != null) existingUser.setEmail(user.getEmail());
+
+        // Cập nhật thông tin cá nhân mới
+        if (user.getBio() != null) existingUser.setBio(user.getBio());
+        if (user.getAvatarColor() != null) existingUser.setAvatarColor(user.getAvatarColor());
+        if (user.getEmailPrivacy() != null) existingUser.setEmailPrivacy(user.getEmailPrivacy());
+
+        // Chỉ cập nhật URL ảnh khi có giá trị thực, không ghi đè bằng chuỗi rỗng
+        if (user.getAvatarUrl() != null && !user.getAvatarUrl().isBlank())
+            existingUser.setAvatarUrl(user.getAvatarUrl());
+        if (user.getBannerUrl() != null && !user.getBannerUrl().isBlank())
+            existingUser.setBannerUrl(user.getBannerUrl());
+
+        existingUser.setUpdatedAt(LocalDateTime.now());
+        return userRepository.save(existingUser);
+    }
+
+    @Override
+    public User changePassword(Long id, String oldPassword, String newPassword) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String storedPassword = user.getPassword();
+        boolean matches = false;
+        if (storedPassword != null && (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$") || storedPassword.startsWith("$2y$"))) {
+            matches = passwordEncoder.matches(oldPassword, storedPassword);
+        } else {
+            matches = oldPassword.equals(storedPassword);
+        }
+
+        if (!matches) {
+            throw new RuntimeException("Mật khẩu cũ không đúng!");
+        }
+
+        // Hash mật khẩu mới rồi lưu
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setUpdatedAt(LocalDateTime.now());
+        return userRepository.save(user);
+    }
+
+    @Override
+    public User login(String username, String rawPassword) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy user!"));
+
+        String storedPassword = user.getPassword();
+        boolean matches = false;
+
+        if (storedPassword != null && (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$") || storedPassword.startsWith("$2y$"))) {
+            // Mật khẩu đã được hash BCrypt
+            matches = passwordEncoder.matches(rawPassword, storedPassword);
+        } else {
+            // Mật khẩu cũ dạng chữ chưa mã hóa (plain text)
+            matches = rawPassword.equals(storedPassword);
+            // Tự động mã hóa BCrypt và cập nhật lại DB cho lần đăng nhập đầu tiên
+            if (matches) {
+                user.setPassword(passwordEncoder.encode(rawPassword));
+                userRepository.save(user);
+            }
+        }
+
+        if (!matches) {
+            throw new RuntimeException("Sai mật khẩu!");
+        }
+
+        return user;
+    }
+
+    @Override
+    public void deleteUser(Long id) {
+        if(!userRepository.existsById(id)) {
+            throw new RuntimeException("User not found");
+        }
+        userRepository.deleteById(id);
+    }
+
+    @Override
+    public Map<String, Object> getUserStats(Long userId) {
+        List<Post> userPosts = postRepository.findByUserId(userId);
+        long totalPosts = userPosts.size();
+        long totalViews = 0;
+        long totalLikes = 0;
+
+        for (Post p : userPosts) {
+            totalViews += p.getViewCount();
+            totalLikes += postLikeRepository.countByPostId(p.getId());
+        }
+
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalPosts", totalPosts);
+        stats.put("totalViews", totalViews);
+        stats.put("totalLikes", totalLikes);
+        return stats;
+    }
+}
+
