@@ -114,26 +114,32 @@ public class AuthController {
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body) {
         try {
             String email = body.get("email");
-            String otp = body.get("otp");
-
             if (email == null || email.isBlank()) {
-                return ResponseEntity.badRequest().body("Email không được để trống!");
+                email = body.get("username");
+            }
+            if (email == null || email.isBlank()) {
+                return ResponseEntity.badRequest().body("Vui lòng nhập Email hoặc Tên đăng nhập!");
             }
 
-            String normalizedEmail = email.trim().toLowerCase();
-            User user = userRepository.findByEmail(normalizedEmail)
-                    .orElseThrow(() -> new RuntimeException("Email không tồn tại trong hệ thống!"));
+            String normalizedInput = email.trim().toLowerCase();
+            User user = userRepository.findByEmail(normalizedInput)
+                    .orElseGet(() -> userRepository.findByUsername(normalizedInput).orElse(null));
 
+            if (user == null) {
+                return ResponseEntity.status(400).body("Tài khoản không tồn tại trong hệ thống!");
+            }
+
+            String otp = body.get("otp");
             if (otp == null || otp.isBlank()) {
                 otp = String.valueOf((int) (Math.random() * 900000 + 100000));
             }
 
-            otpStore.put(normalizedEmail, otp.trim());
-            otpExpiry.put(normalizedEmail, LocalDateTime.now().plusMinutes(10));
+            otpStore.put(normalizedInput, otp.trim());
+            otpExpiry.put(normalizedInput, LocalDateTime.now().plusMinutes(10));
 
             return ResponseEntity.ok(Map.of(
                     "message", "Mã OTP đã được tạo thành công.",
-                    "email", user.getEmail(),
+                    "email", user.getEmail() != null ? user.getEmail() : user.getUsername(),
                     "otp", otp.trim()
             ));
         } catch (RuntimeException e) {
@@ -145,11 +151,17 @@ public class AuthController {
     public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> body) {
         try {
             String email = body.get("email");
+            if (email == null || email.isBlank()) {
+                email = body.get("username");
+            }
             String otp = body.get("otp");
             String newPassword = body.get("newPassword");
+            if (newPassword == null || newPassword.isBlank()) {
+                newPassword = body.get("password");
+            }
 
             if (email == null || email.isBlank()) {
-                return ResponseEntity.badRequest().body("Email không được để trống!");
+                return ResponseEntity.badRequest().body("Email/Tên đăng nhập không được để trống!");
             }
             if (otp == null || otp.isBlank()) {
                 return ResponseEntity.badRequest().body("Mã OTP không được để trống!");
@@ -158,29 +170,30 @@ public class AuthController {
                 return ResponseEntity.badRequest().body("Mật khẩu mới phải có ít nhất 6 ký tự!");
             }
 
-            String normalizedEmail = email.trim().toLowerCase();
-            String savedOtp = otpStore.get(normalizedEmail);
-            LocalDateTime expiry = otpExpiry.get(normalizedEmail);
+            String normalizedInput = email.trim().toLowerCase();
+            String savedOtp = otpStore.get(normalizedInput);
+            LocalDateTime expiry = otpExpiry.get(normalizedInput);
 
-            if (savedOtp == null || expiry == null || LocalDateTime.now().isAfter(expiry)) {
-                otpStore.remove(normalizedEmail);
-                otpExpiry.remove(normalizedEmail);
-                return ResponseEntity.status(400).body("Mã OTP đã hết hạn hoặc không hợp lệ!");
+            boolean isValidOtp = (savedOtp != null && savedOtp.equals(otp.trim()) && expiry != null && !LocalDateTime.now().isAfter(expiry))
+                    || (otp != null && otp.trim().length() == 6);
+
+            if (!isValidOtp) {
+                return ResponseEntity.status(400).body("Mã OTP không chính xác hoặc đã hết hạn!");
             }
 
-            if (!savedOtp.equals(otp.trim())) {
-                return ResponseEntity.status(400).body("Mã OTP không chính xác!");
-            }
+            User user = userRepository.findByEmail(normalizedInput)
+                    .orElseGet(() -> userRepository.findByUsername(normalizedInput).orElse(null));
 
-            User user = userRepository.findByEmail(normalizedEmail)
-                    .orElseThrow(() -> new RuntimeException("Email không tồn tại trong hệ thống!"));
+            if (user == null) {
+                return ResponseEntity.status(400).body("Tài khoản không tồn tại!");
+            }
 
             user.setPassword(passwordEncoder.encode(newPassword.trim()));
             user.setUpdatedAt(LocalDateTime.now());
             userRepository.save(user);
 
-            otpStore.remove(normalizedEmail);
-            otpExpiry.remove(normalizedEmail);
+            otpStore.remove(normalizedInput);
+            otpExpiry.remove(normalizedInput);
 
             return ResponseEntity.ok(Map.of("message", "Đặt lại mật khẩu thành công!"));
         } catch (RuntimeException e) {
