@@ -7,6 +7,7 @@ import com.example.blogsystem.dto.RegisterRequest;
 import com.example.blogsystem.entity.User;
 import com.example.blogsystem.repository.UserRepository;
 import com.example.blogsystem.service.UserService;
+import com.example.blogsystem.service.PasswordResetMailService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,15 +27,17 @@ public class AuthController {
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
+    private final PasswordResetMailService passwordResetMailService;
 
     private final Map<String, String> otpStore = new ConcurrentHashMap<>();
     private final Map<String, LocalDateTime> otpExpiry = new ConcurrentHashMap<>();
 
-    public AuthController(UserService userService, UserRepository userRepository, JwtUtil jwtUtil, PasswordEncoder passwordEncoder) {
+    public AuthController(UserService userService, UserRepository userRepository, JwtUtil jwtUtil, PasswordEncoder passwordEncoder, PasswordResetMailService passwordResetMailService) {
         this.userService = userService;
         this.userRepository = userRepository;
         this.jwtUtil = jwtUtil;
         this.passwordEncoder = passwordEncoder;
+        this.passwordResetMailService = passwordResetMailService;
     }
 
     @PostMapping("/register")
@@ -43,8 +46,8 @@ public class AuthController {
             if (request.getUsername() == null || request.getUsername().isBlank()) {
                 return ResponseEntity.badRequest().body("Tên đăng nhập không được để trống!");
             }
-            if (request.getPassword() == null || request.getPassword().length() < 6) {
-                return ResponseEntity.badRequest().body("Mật khẩu phải có ít nhất 6 ký tự!");
+            if (request.getPassword() == null || request.getPassword().length() < 8) {
+                return ResponseEntity.badRequest().body("Mật khẩu phải có ít nhất 8 ký tự!");
             }
             if (userRepository.existsByUsername(request.getUsername().trim())) {
                 return ResponseEntity.badRequest().body("Tên đăng nhập '" + request.getUsername() + "' đã tồn tại!");
@@ -130,16 +133,18 @@ public class AuthController {
             if (user == null) return ResponseEntity.ok(Map.of("message", "Nếu tài khoản tồn tại, hướng dẫn đặt lại mật khẩu sẽ được gửi."));
 
             String otp = String.format("%06d", new SecureRandom().nextInt(1_000_000));
-
-            otpStore.put(normalizedInput, otp.trim());
+            passwordResetMailService.sendResetCode(user.getEmail(), otp);
+            otpStore.put(normalizedInput, otp);
             otpExpiry.put(normalizedInput, LocalDateTime.now().plusMinutes(10));
 
             return ResponseEntity.ok(Map.of(
                     "message", "Mã OTP đã được tạo thành công.",
                     "message", "Nếu tài khoản tồn tại, hướng dẫn đặt lại mật khẩu sẽ được gửi."
             ));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(503).body("Dịch vụ gửi email đang tạm thời không khả dụng.");
         } catch (RuntimeException e) {
-            return ResponseEntity.status(400).body(e.getMessage());
+            return ResponseEntity.status(502).body("Không thể gửi email đặt lại mật khẩu. Vui lòng thử lại sau.");
         }
     }
 
@@ -162,8 +167,8 @@ public class AuthController {
             if (otp == null || otp.isBlank()) {
                 return ResponseEntity.badRequest().body("Mã OTP không được để trống!");
             }
-            if (newPassword == null || newPassword.length() < 6) {
-                return ResponseEntity.badRequest().body("Mật khẩu mới phải có ít nhất 6 ký tự!");
+            if (newPassword == null || newPassword.length() < 8) {
+                return ResponseEntity.badRequest().body("Mật khẩu mới phải có ít nhất 8 ký tự!");
             }
 
             String normalizedInput = email.trim().toLowerCase();

@@ -70,6 +70,9 @@ public class UserImpl implements UserService {
 
     @Override
     public User changePassword(Long id, String oldPassword, String newPassword) {
+        if (oldPassword == null || newPassword == null || newPassword.length() < 8) {
+            throw new RuntimeException("Mật khẩu mới phải có ít nhất 8 ký tự!");
+        }
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -88,14 +91,16 @@ public class UserImpl implements UserService {
 
     @Override
     public User login(String username, String rawPassword) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy user!"));
+        String normalizedUsername = username == null ? "" : username.trim();
+        User user = userRepository.findByUsername(normalizedUsername)
+                .or(() -> userRepository.findByEmail(normalizedUsername.toLowerCase()))
+                .orElseThrow(() -> new RuntimeException("Tên đăng nhập hoặc mật khẩu không đúng!"));
 
         String storedPassword = user.getPassword();
         boolean matches = storedPassword != null && passwordEncoder.matches(rawPassword, storedPassword);
 
         if (!matches) {
-            throw new RuntimeException("Sai mật khẩu!");
+            throw new RuntimeException("Tên đăng nhập hoặc mật khẩu không đúng!");
         }
 
         return user;
