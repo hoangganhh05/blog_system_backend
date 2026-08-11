@@ -3,6 +3,7 @@ package com.example.blogsystem.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,12 +14,15 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/upload")
 public class FileUploadController {
 
-    private final String UPLOAD_DIR = "uploads";
+    private static final Path UPLOAD_DIR = Paths.get("uploads").toAbsolutePath().normalize();
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
+    private static final Set<String> ALLOWED_TYPES = Set.of("image/jpeg", "image/png", "image/gif", "image/webp");
 
     @PostMapping
     public ResponseEntity<Map<String, Object>> uploadFile(@RequestParam("file") MultipartFile file) {
@@ -27,23 +31,26 @@ public class FileUploadController {
             err.put("error", "Tệp không được để trống!");
             return ResponseEntity.badRequest().body(err);
         }
+        if (file.getSize() > MAX_FILE_SIZE || !ALLOWED_TYPES.contains(file.getContentType())) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Chỉ chấp nhận ảnh JPG, PNG, GIF hoặc WebP, tối đa 5 MB."));
+        }
 
         try {
             // Tạo thư mục /uploads nếu chưa tồn tại
-            File dir = new File(UPLOAD_DIR);
-            if (!dir.exists()) {
-                dir.mkdirs();
-            }
+            Files.createDirectories(UPLOAD_DIR);
 
             // Đổi tên tệp bằng UUID để tránh trùng tên
             String originalFilename = file.getOriginalFilename();
-            String extension = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
+            String extension = switch (file.getContentType()) {
+                case MediaType.IMAGE_JPEG_VALUE -> ".jpg";
+                case MediaType.IMAGE_PNG_VALUE -> ".png";
+                case MediaType.IMAGE_GIF_VALUE -> ".gif";
+                default -> ".webp";
+            };
 
             String newFilename = UUID.randomUUID().toString() + extension;
-            Path filepath = Paths.get(UPLOAD_DIR, newFilename);
+            Path filepath = UPLOAD_DIR.resolve(newFilename).normalize();
+            if (!filepath.startsWith(UPLOAD_DIR)) throw new IOException("Invalid upload path");
 
             // Lưu tệp vào đĩa
             Files.copy(file.getInputStream(), filepath);

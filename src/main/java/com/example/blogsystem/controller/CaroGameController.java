@@ -2,6 +2,7 @@ package com.example.blogsystem.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.example.blogsystem.config.CurrentUser;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -59,10 +60,16 @@ public class CaroGameController {
     }
 
     private final Map<String, CaroRoom> rooms = new ConcurrentHashMap<>();
+    private final CurrentUser currentUser;
+
+    public CaroGameController(CurrentUser currentUser) {
+        this.currentUser = currentUser;
+    }
 
     // 1. Tạo phòng mới: POST /games/caro/create?userId=...&userName=...
     @PostMapping("/create")
-    public ResponseEntity<CaroRoom> createRoom(@RequestParam Long userId, @RequestParam String userName) {
+    public ResponseEntity<CaroRoom> createRoom(@RequestParam String userName) {
+        Long userId = currentUser.id();
         String code = String.valueOf(1000 + new Random().nextInt(9000));
         CaroRoom room = new CaroRoom();
         room.setRoomCode(code);
@@ -77,7 +84,8 @@ public class CaroGameController {
 
     // 2. Tham gia phòng: POST /games/caro/join?roomCode=...&userId=...&userName=...
     @PostMapping("/join")
-    public ResponseEntity<?> joinRoom(@RequestParam String roomCode, @RequestParam Long userId, @RequestParam String userName) {
+    public ResponseEntity<?> joinRoom(@RequestParam String roomCode, @RequestParam String userName) {
+        Long userId = currentUser.id();
         CaroRoom room = rooms.get(roomCode);
         if (room == null) {
             return ResponseEntity.badRequest().body("Phòng không tồn tại!");
@@ -100,7 +108,8 @@ public class CaroGameController {
 
     // 3. Đặt cờ: POST /games/caro/move?roomCode=...&userId=...&cellIndex=...
     @PostMapping("/move")
-    public ResponseEntity<?> makeMove(@RequestParam String roomCode, @RequestParam Long userId, @RequestParam int cellIndex) {
+    public ResponseEntity<?> makeMove(@RequestParam String roomCode, @RequestParam int cellIndex) {
+        Long userId = currentUser.id();
         CaroRoom room = rooms.get(roomCode);
         if (room == null) return ResponseEntity.badRequest().body("Phòng không tồn tại!");
 
@@ -146,8 +155,12 @@ public class CaroGameController {
 
     // 5. Chơi lại (Reset board): POST /games/caro/restart?roomCode=...
     @PostMapping("/restart")
-    public ResponseEntity<CaroRoom> restartGame(@RequestParam String roomCode) {
+    public ResponseEntity<?> restartGame(@RequestParam String roomCode) {
         CaroRoom room = rooms.get(roomCode);
+        if (room == null) return ResponseEntity.notFound().build();
+        if (!currentUser.id().equals(room.getHostId()) && !currentUser.id().equals(room.getGuestId())) {
+            return ResponseEntity.status(403).build();
+        }
         if (room != null) {
             Arrays.fill(room.getBoard(), "");
             room.setStatus(room.getGuestId() != null ? "PLAYING" : "WAITING");

@@ -74,12 +74,7 @@ public class UserImpl implements UserService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         String storedPassword = user.getPassword();
-        boolean matches = false;
-        if (storedPassword != null && (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$") || storedPassword.startsWith("$2y$"))) {
-            matches = passwordEncoder.matches(oldPassword, storedPassword);
-        } else {
-            matches = oldPassword.equals(storedPassword);
-        }
+        boolean matches = storedPassword != null && passwordEncoder.matches(oldPassword, storedPassword);
 
         if (!matches) {
             throw new RuntimeException("Mật khẩu cũ không đúng!");
@@ -97,20 +92,7 @@ public class UserImpl implements UserService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy user!"));
 
         String storedPassword = user.getPassword();
-        boolean matches = false;
-
-        if (storedPassword != null && (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$") || storedPassword.startsWith("$2y$"))) {
-            // Mật khẩu đã được hash BCrypt
-            matches = passwordEncoder.matches(rawPassword, storedPassword);
-        } else {
-            // Mật khẩu cũ dạng chữ chưa mã hóa (plain text)
-            matches = rawPassword.equals(storedPassword);
-            // Tự động mã hóa BCrypt và cập nhật lại DB cho lần đăng nhập đầu tiên
-            if (matches) {
-                user.setPassword(passwordEncoder.encode(rawPassword));
-                userRepository.save(user);
-            }
-        }
+        boolean matches = storedPassword != null && passwordEncoder.matches(rawPassword, storedPassword);
 
         if (!matches) {
             throw new RuntimeException("Sai mật khẩu!");

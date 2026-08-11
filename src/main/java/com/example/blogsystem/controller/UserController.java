@@ -2,6 +2,7 @@ package com.example.blogsystem.controller;
 
 import com.example.blogsystem.entity.User;
 import com.example.blogsystem.service.UserService;
+import com.example.blogsystem.config.CurrentUser;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,9 +14,11 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final CurrentUser currentUser;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, CurrentUser currentUser) {
         this.userService = userService;
+        this.currentUser = currentUser;
     }
 
     @GetMapping
@@ -30,17 +33,20 @@ public class UserController {
 
     @PostMapping
     public User createUser(@RequestBody User user) {
+        if (!currentUser.isAdmin()) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
         return userService.createUser(user);
     }
 
     @PutMapping("/{id}")
     public User updateUser(@PathVariable Long id,
                            @RequestBody User user) {
+        currentUser.requireOwnerOrAdmin(id);
         return userService.updateUser(id, user);
     }
 
     @DeleteMapping("/{id}")
     public void deleteUser(@PathVariable Long id) {
+        currentUser.requireOwnerOrAdmin(id);
         userService.deleteUser(id);
     }
 
@@ -51,6 +57,7 @@ public class UserController {
             @PathVariable Long id,
             @RequestBody Map<String, String> body) {
         try {
+            currentUser.requireOwnerOrAdmin(id);
             String oldPassword = body.get("oldPassword");
             String newPassword = body.get("newPassword");
             userService.changePassword(id, oldPassword, newPassword);
@@ -63,9 +70,10 @@ public class UserController {
     // Lấy thống kê cá nhân: GET /users/{id}/stats
     @GetMapping("/{id}/stats")
     public ResponseEntity<Map<String, Object>> getUserStats(@PathVariable Long id) {
+        currentUser.requireOwnerOrAdmin(id);
         Map<String, Object> stats = userService.getUserStats(id);
         return ResponseEntity.ok(stats);
     }
 }
 
-
+

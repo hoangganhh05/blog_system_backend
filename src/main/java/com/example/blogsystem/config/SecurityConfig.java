@@ -44,16 +44,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         // Tất cả các endpoints công khai
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/posts/**").permitAll()
-                        .requestMatchers("/categories/**").permitAll()
-                        .requestMatchers("/users/**").permitAll()
-                        .requestMatchers("/comments/**").permitAll()
-                        .requestMatchers("/notifications/**").permitAll()
-                        .requestMatchers("/uploads/**", "/upload/**").permitAll()
-
-                        // Mở tất cả route để không bao giờ bị dính lỗi 403 Forbidden
-                        .anyRequest().permitAll()
+                        .requestMatchers("/auth/register", "/auth/login", "/auth/forgot-password", "/auth/reset-password").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/posts/**", "/categories/**", "/comments/**", "/users/*", "/stories/active", "/uploads/**", "/games/caro/open-rooms", "/games/caro/room/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/categories/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/categories/**").hasRole("ADMIN")
+                        .anyRequest().authenticated()
                 )
 
                 // Đăng ký JwtFilter chạy trước filter mặc định

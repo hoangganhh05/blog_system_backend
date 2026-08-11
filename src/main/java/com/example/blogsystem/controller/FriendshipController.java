@@ -3,6 +3,7 @@ package com.example.blogsystem.controller;
 import com.example.blogsystem.entity.Friendship;
 import com.example.blogsystem.entity.User;
 import com.example.blogsystem.service.FriendshipService;
+import com.example.blogsystem.config.CurrentUser;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,18 +16,19 @@ import java.util.Map;
 public class FriendshipController {
 
     private final FriendshipService friendshipService;
+    private final CurrentUser currentUser;
 
-    public FriendshipController(FriendshipService friendshipService) {
+    public FriendshipController(FriendshipService friendshipService, CurrentUser currentUser) {
         this.friendshipService = friendshipService;
+        this.currentUser = currentUser;
     }
 
     // Gửi lời mời kết bạn: POST /friends/request?senderId=...&receiverId=...
     @PostMapping("/request")
     public ResponseEntity<Map<String, Object>> sendRequest(
-            @RequestParam Long senderId,
             @RequestParam Long receiverId) {
         try {
-            Map<String, Object> result = friendshipService.sendFriendRequest(senderId, receiverId);
+            Map<String, Object> result = friendshipService.sendFriendRequest(currentUser.id(), receiverId);
             return ResponseEntity.ok(result);
         } catch (RuntimeException e) {
             Map<String, Object> err = new HashMap<>();
@@ -38,10 +40,9 @@ public class FriendshipController {
     // Chấp nhận lời mời kết bạn: POST /friends/accept?currentUserId=...&requesterId=...
     @PostMapping("/accept")
     public ResponseEntity<Map<String, Object>> acceptRequest(
-            @RequestParam Long currentUserId,
             @RequestParam Long requesterId) {
         try {
-            Map<String, Object> result = friendshipService.acceptFriendRequest(currentUserId, requesterId);
+            Map<String, Object> result = friendshipService.acceptFriendRequest(currentUser.id(), requesterId);
             return ResponseEntity.ok(result);
         } catch (RuntimeException e) {
             Map<String, Object> err = new HashMap<>();
@@ -55,6 +56,9 @@ public class FriendshipController {
     public ResponseEntity<Map<String, Object>> removeFriendship(
             @RequestParam Long userId1,
             @RequestParam Long userId2) {
+        if (!currentUser.id().equals(userId1) && !currentUser.id().equals(userId2)) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
+        }
         Map<String, Object> result = friendshipService.removeOrCancelFriendship(userId1, userId2);
         return ResponseEntity.ok(result);
     }
@@ -62,9 +66,8 @@ public class FriendshipController {
     // Kiểm tra trạng thái kết bạn giữa 2 người: GET /friends/status?currentUserId=...&targetUserId=...
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> getStatus(
-            @RequestParam Long currentUserId,
             @RequestParam Long targetUserId) {
-        String status = friendshipService.getFriendshipStatus(currentUserId, targetUserId);
+        String status = friendshipService.getFriendshipStatus(currentUser.id(), targetUserId);
         Map<String, Object> result = new HashMap<>();
         result.put("status", status);
         return ResponseEntity.ok(result);
@@ -80,6 +83,7 @@ public class FriendshipController {
     // Lấy danh sách lời mời kết bạn đang chờ: GET /friends/pending/{userId}
     @GetMapping("/pending/{userId}")
     public ResponseEntity<List<Friendship>> getPendingRequests(@PathVariable Long userId) {
+        currentUser.requireOwnerOrAdmin(userId);
         List<Friendship> pending = friendshipService.getPendingRequests(userId);
         return ResponseEntity.ok(pending);
     }

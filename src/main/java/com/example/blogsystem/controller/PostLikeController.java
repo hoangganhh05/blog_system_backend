@@ -1,6 +1,7 @@
 package com.example.blogsystem.controller;
 
 import com.example.blogsystem.service.PostLikeService;
+import com.example.blogsystem.config.CurrentUser;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,17 +13,18 @@ import java.util.Map;
 public class PostLikeController {
 
     private final PostLikeService postLikeService;
+    private final CurrentUser currentUser;
 
-    public PostLikeController(PostLikeService postLikeService) {
+    public PostLikeController(PostLikeService postLikeService, CurrentUser currentUser) {
         this.postLikeService = postLikeService;
+        this.currentUser = currentUser;
     }
 
     @PostMapping("/{postId}/like")
     public ResponseEntity<Map<String, Object>> toggleLike(
             @PathVariable Long postId,
-            @RequestParam Long userId,
             @RequestParam(required = false, defaultValue = "LIKE") String type) {
-        Map<String, Object> response = postLikeService.toggleReaction(userId, postId, type);
+        Map<String, Object> response = postLikeService.toggleReaction(currentUser.id(), postId, type);
         return ResponseEntity.ok(response);
     }
 
@@ -37,8 +39,8 @@ public class PostLikeController {
 
     @GetMapping("/{postId}/likes/check")
     public ResponseEntity<Map<String, Object>> checkLiked(
-            @PathVariable Long postId,
-            @RequestParam Long userId) {
+            @PathVariable Long postId) {
+        Long userId = currentUser.id();
         boolean liked = postLikeService.isLikedByUser(userId, postId);
         String userReaction = postLikeService.getUserReaction(userId, postId);
         long count = postLikeService.getLikeCount(postId);

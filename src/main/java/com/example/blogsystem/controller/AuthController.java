@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.security.SecureRandom;
 
 @RestController
 @RequestMapping("/auth")
@@ -125,22 +126,17 @@ public class AuthController {
             User user = userRepository.findByEmail(normalizedInput)
                     .orElseGet(() -> userRepository.findByUsername(normalizedInput).orElse(null));
 
-            if (user == null) {
-                return ResponseEntity.status(400).body("Tài khoản không tồn tại trong hệ thống!");
-            }
+            // Always return the same response to prevent account enumeration.
+            if (user == null) return ResponseEntity.ok(Map.of("message", "Nếu tài khoản tồn tại, hướng dẫn đặt lại mật khẩu sẽ được gửi."));
 
-            String otp = body.get("otp");
-            if (otp == null || otp.isBlank()) {
-                otp = String.valueOf((int) (Math.random() * 900000 + 100000));
-            }
+            String otp = String.format("%06d", new SecureRandom().nextInt(1_000_000));
 
             otpStore.put(normalizedInput, otp.trim());
             otpExpiry.put(normalizedInput, LocalDateTime.now().plusMinutes(10));
 
             return ResponseEntity.ok(Map.of(
                     "message", "Mã OTP đã được tạo thành công.",
-                    "email", user.getEmail() != null ? user.getEmail() : user.getUsername(),
-                    "otp", otp.trim()
+                    "message", "Nếu tài khoản tồn tại, hướng dẫn đặt lại mật khẩu sẽ được gửi."
             ));
         } catch (RuntimeException e) {
             return ResponseEntity.status(400).body(e.getMessage());
@@ -174,8 +170,7 @@ public class AuthController {
             String savedOtp = otpStore.get(normalizedInput);
             LocalDateTime expiry = otpExpiry.get(normalizedInput);
 
-            boolean isValidOtp = (savedOtp != null && savedOtp.equals(otp.trim()) && expiry != null && !LocalDateTime.now().isAfter(expiry))
-                    || (otp != null && otp.trim().length() == 6);
+            boolean isValidOtp = savedOtp != null && savedOtp.equals(otp.trim()) && expiry != null && !LocalDateTime.now().isAfter(expiry);
 
             if (!isValidOtp) {
                 return ResponseEntity.status(400).body("Mã OTP không chính xác hoặc đã hết hạn!");

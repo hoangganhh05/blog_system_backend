@@ -21,7 +21,9 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String username;
+    @JsonIgnore
     private String email;
+    @JsonIgnore
     private String password;
     private String fullName;
 
