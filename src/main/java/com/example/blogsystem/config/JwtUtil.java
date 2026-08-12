@@ -29,7 +29,7 @@ public class JwtUtil {
 
     public String normalizeRole(String role) {
         if (role == null || role.isBlank()) {
-            return null;
+            return "USER";
         }
 
         String normalized = role.trim().toUpperCase();
@@ -41,7 +41,7 @@ public class JwtUtil {
             return normalized;
         }
 
-        return null;
+        return "USER";
     }
 
     // ==========================================

@@ -96,6 +96,11 @@ public class UserImpl implements UserService {
                 .or(() -> userRepository.findByEmail(normalizedUsername.toLowerCase()))
                 .orElseThrow(() -> new RuntimeException("Tên đăng nhập hoặc mật khẩu không đúng!"));
 
+        if (user.getRole() == null || user.getRole().isBlank()) {
+            user.setRole("USER");
+            userRepository.save(user);
+        }
+
         String storedPassword = user.getPassword();
         boolean matches = storedPassword != null && passwordEncoder.matches(rawPassword, storedPassword);
 
