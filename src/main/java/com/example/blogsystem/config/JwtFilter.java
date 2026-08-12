@@ -40,9 +40,11 @@ public class JwtFilter extends OncePerRequestFilter {
         // Bước 3: Tách "Bearer " lấy token thật
         String token = authHeader.substring(7);
 
-        // Bước 4: Kiểm tra token, nếu hết hạn hoặc không hợp lệ -> bỏ qua authentication và cho đi tiếp
+        // Bước 4: Kiểm tra token, nếu hết hạn hoặc không hợp lệ -> reject ngay để tránh fallthrough 403 mơ hồ
         if (!jwtUtil.isTokenValid(token)) {
-            filterChain.doFilter(request, response);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\":\"Token không hợp lệ hoặc đã hết hạn\"}");
             return;
         }
 
