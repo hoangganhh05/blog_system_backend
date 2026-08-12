@@ -11,6 +11,9 @@ import com.example.blogsystem.service.PostLikeService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -138,5 +141,30 @@ public class PostLikeServiceImpl implements PostLikeService {
             summary.put(type, summary.getOrDefault(type, 0L) + 1);
         }
         return summary;
+    }
+
+    @Override
+    public List<Map<String, Object>> getReactionsList(Long postId) {
+        List<PostLike> likes = postLikeRepository.findByPostId(postId);
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        for (PostLike like : likes) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", like.getId());
+            item.put("type", like.getType() != null ? like.getType() : "LIKE");
+
+            User user = like.getUser();
+            if (user != null) {
+                Map<String, Object> userMap = new HashMap<>();
+                userMap.put("id", user.getId());
+                userMap.put("username", user.getUsername());
+                userMap.put("fullName", user.getFullName());
+                item.put("user", userMap);
+            }
+
+            result.add(item);
+        }
+
+        return result;
     }
 }

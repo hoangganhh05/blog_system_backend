@@ -2,6 +2,8 @@ package com.example.blogsystem.service;
 
 import java.util.Map;
 
+import java.util.List;
+
 public interface PostLikeService {
     boolean toggleLike(Long userId, Long postId);
     Map<String, Object> toggleReaction(Long userId, Long postId, String reactionType);
@@ -9,4 +11,5 @@ public interface PostLikeService {
     boolean isLikedByUser(Long userId, Long postId);
     String getUserReaction(Long userId, Long postId);
     Map<String, Long> getReactionsSummary(Long postId);
+    List<Map<String, Object>> getReactionsList(Long postId);
 }

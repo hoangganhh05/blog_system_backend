@@ -53,4 +53,9 @@ public class PostLikeController {
         response.put("reactionsSummary", summary);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/{postId}/likes/list")
+    public ResponseEntity<java.util.List<Map<String, Object>>> getReactionsList(@PathVariable Long postId) {
+        return ResponseEntity.ok(postLikeService.getReactionsList(postId));
+    }
 }
