@@ -1,5 +1,6 @@
 package com.example.blogsystem.controller;
 
+import com.example.blogsystem.dto.UserPublicDTO;
 import com.example.blogsystem.entity.User;
 import com.example.blogsystem.service.UserService;
 import com.example.blogsystem.config.CurrentUser;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/users")
@@ -22,13 +24,15 @@ public class UserController {
     }
 
     @GetMapping
-    public List<User> getUsers() {
-        return userService.getAllUsers();
+    public List<UserPublicDTO> getUsers() {
+        return userService.getAllUsers().stream()
+                .map(this::toPublicDto)
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public User getUserById(@PathVariable Long id) {
-        return userService.getUserById(id);
+    public UserPublicDTO getUserById(@PathVariable Long id) {
+        return toPublicDto(userService.getUserById(id));
     }
 
     @PostMapping
@@ -73,6 +77,21 @@ public class UserController {
         currentUser.requireOwnerOrAdmin(id);
         Map<String, Object> stats = userService.getUserStats(id);
         return ResponseEntity.ok(stats);
+    }
+
+    private UserPublicDTO toPublicDto(User user) {
+        if (user == null) return null;
+        return new UserPublicDTO(
+                user.getUsername(),
+                user.getFullName(),
+                user.getBio(),
+                user.getAvatarColor(),
+                user.getAvatarUrl(),
+                user.getBannerUrl(),
+                user.getEmailPrivacy(),
+                user.getRole(),
+                user.getCreatedAt()
+        );
     }
 }
 
