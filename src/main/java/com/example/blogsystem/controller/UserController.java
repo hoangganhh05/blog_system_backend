@@ -82,6 +82,7 @@ public class UserController {
     private UserPublicDTO toPublicDto(User user) {
         if (user == null) return null;
         return new UserPublicDTO(
+                user.getId(),
                 user.getUsername(),
                 user.getFullName(),
                 user.getBio(),
