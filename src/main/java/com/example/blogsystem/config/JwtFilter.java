@@ -51,8 +51,8 @@ public class JwtFilter extends OncePerRequestFilter {
 
         // Bước 5: Đọc thông tin từ token
         Long userId = jwtUtil.extractUserId(token);
-        String role = jwtUtil.extractRole(token);
-        if (role == null || !(role.equals("USER") || role.equals("ADMIN"))) {
+        String role = jwtUtil.normalizeRole(jwtUtil.extractRole(token));
+        if (role == null) {
             filterChain.doFilter(request, response);
             return;
         }

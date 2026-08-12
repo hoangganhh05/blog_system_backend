@@ -27,10 +27,28 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
+    public String normalizeRole(String role) {
+        if (role == null || role.isBlank()) {
+            return null;
+        }
+
+        String normalized = role.trim().toUpperCase();
+        if (normalized.startsWith("ROLE_")) {
+            normalized = normalized.substring(5);
+        }
+
+        if ("USER".equals(normalized) || "ADMIN".equals(normalized)) {
+            return normalized;
+        }
+
+        return null;
+    }
+
     // ==========================================
     // BƯỚC 2: TẠO TOKEN
     // ==========================================
     public String generateToken(Long userId, String username, String role) {
+        String normalizedRole = normalizeRole(role);
         return Jwts.builder()
                 // subject = field chuẩn của JWT, thường chứa ID người dùng
                 // valueOf() vì subject phải là String, userId là Long
@@ -38,7 +56,7 @@ public class JwtUtil {
 
                 // claim() = thêm dữ liệu tùy ý vào payload
                 .claim("username", username) // thêm username vào payload
-                .claim("role", role)         // thêm role vào payload
+                .claim("role", normalizedRole)         // thêm role vào payload
 
                 // issuedAt = thời điểm tạo token (bây giờ)
                 .issuedAt(new Date())
