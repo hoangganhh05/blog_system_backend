@@ -65,6 +65,7 @@ public class SecurityConfig {
                         // Tất cả các endpoints công khai
                         .requestMatchers("/auth/register", "/auth/login", "/auth/forgot-password", "/auth/reset-password").permitAll()
                         .requestMatchers(HttpMethod.GET, "/posts", "/posts/**", "/categories", "/categories/**", "/comments", "/comments/**", "/stories/active", "/uploads/**", "/games/caro/open-rooms", "/games/caro/room/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/posts/**/view").permitAll()
 
                         // Các endpoint yêu cầu user đã xác thực
                         .requestMatchers(HttpMethod.GET, "/users", "/users/**", "/notifications/**", "/friends/**").authenticated()
