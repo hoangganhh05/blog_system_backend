@@ -22,9 +22,10 @@ public class CommentController {
         this.currentUser = currentUser;
     }
 
+    // Lấy comments theo bài viết — bắt buộc truyền postId để tránh LazyInitializationException
     @GetMapping
-    public List<Comment> getComments() {
-        return commentService.getAllComments();
+    public List<Comment> getComments(@RequestParam Long postId) {
+        return commentService.getCommentsByPostId(postId);
     }
 
     @GetMapping("/{id}")

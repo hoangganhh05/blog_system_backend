@@ -19,4 +19,6 @@ public interface PostService {
     void deletePost(Long id);
 
     Page<Post> searchPosts(String query, Pageable pageable);
+
+    Post incrementViewCount(Long id);
 }

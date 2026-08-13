@@ -36,9 +36,14 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Post getPostById(Long id) {
+        return postRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Post not found"));
+    }
+
+    @Override
+    public Post incrementViewCount(Long id) {
         Post post = postRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Post not found"));
-        // Tăng view count mỗi lần xem chi tiết
         int currentViews = post.getViewCount() == null ? 0 : post.getViewCount();
         post.setViewCount(currentViews + 1);
         return postRepository.save(post);

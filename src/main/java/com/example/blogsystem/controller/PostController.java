@@ -47,6 +47,11 @@ public class PostController {
     public Post getPostById(@PathVariable Long id) {
         return postService.getPostById(id);
     }
+
+    @PostMapping("/{id}/view")
+    public Post incrementView(@PathVariable Long id) {
+        return postService.incrementViewCount(id);
+    }
     @PostMapping
     public Post createPost(@RequestBody Post post) {
         post.setUser(userRepository.getReferenceById(currentUser.id()));
