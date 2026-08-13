@@ -2,6 +2,7 @@ package com.example.blogsystem.dto;
 
 import com.example.blogsystem.entity.Bookmark;
 import com.example.blogsystem.entity.Category;
+import com.example.blogsystem.entity.Comment;
 import com.example.blogsystem.entity.Post;
 import com.example.blogsystem.entity.PostLike;
 import com.example.blogsystem.entity.User;
@@ -86,11 +87,11 @@ public class DTOMapper {
     
     public static UserReactionDTO toUserReactionDTO(PostLike postLike) {
         if (postLike == null) return null;
-        
+
         UserReactionDTO dto = new UserReactionDTO();
         dto.setId(postLike.getId());
         dto.setType(postLike.getType() != null ? postLike.getType() : "LIKE");
-        
+
         if (postLike.getUser() != null) {
             dto.setUserId(postLike.getUser().getId());
             dto.setUsername(postLike.getUser().getUsername());
@@ -98,7 +99,27 @@ public class DTOMapper {
             dto.setAvatarUrl(postLike.getUser().getAvatarUrl());
             dto.setAvatarColor(postLike.getUser().getAvatarColor());
         }
-        
+
+        return dto;
+    }
+
+    public static CommentDTO toCommentDTO(Comment comment) {
+        if (comment == null) return null;
+
+        CommentDTO dto = new CommentDTO();
+        dto.setId(comment.getId());
+        dto.setContent(comment.getContent());
+        dto.setCreatedAt(comment.getCreatedAt());
+        dto.setUpdatedAt(comment.getUpdatedAt());
+
+        if (comment.getPost() != null) {
+            dto.setPostId(comment.getPost().getId());
+        }
+
+        if (comment.getUser() != null) {
+            dto.setUser(toUserPublicDTO(comment.getUser()));
+        }
+
         return dto;
     }
 }

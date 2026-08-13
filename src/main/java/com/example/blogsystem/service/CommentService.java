@@ -1,5 +1,6 @@
 package com.example.blogsystem.service;
 
+import com.example.blogsystem.dto.CommentDTO;
 import com.example.blogsystem.entity.Comment;
 import org.springframework.stereotype.Service;
 
@@ -7,15 +8,15 @@ import java.util.List;
 @Service
 public interface CommentService {
 
-    List<Comment> getAllComments();
+    List<CommentDTO> getAllComments();
 
-    List<Comment> getCommentsByPostId(Long postId);
+    List<CommentDTO> getCommentsByPostId(Long postId);
 
-    Comment getCommentById(Long id);
+    CommentDTO getCommentById(Long id);
 
-    Comment createComment(Comment comment);
+    CommentDTO createComment(Comment comment);
 
-    Comment updateComment(Long id, Comment comment);
+    CommentDTO updateComment(Long id, Comment comment);
 
     void deleteComment(Long id);
 }

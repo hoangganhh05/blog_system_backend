@@ -1,5 +1,7 @@
 package com.example.blogsystem.service.impl;
 
+import com.example.blogsystem.dto.CommentDTO;
+import com.example.blogsystem.dto.DTOMapper;
 import com.example.blogsystem.entity.Comment;
 import com.example.blogsystem.entity.Post;
 import com.example.blogsystem.entity.User;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CommentImpl implements CommentService {
@@ -28,25 +31,31 @@ public class CommentImpl implements CommentService {
     }
 
     @Override
-    public List<Comment> getAllComments() {
-        return commentRepository.findAll();
+    public List<CommentDTO> getAllComments() {
+        return commentRepository.findAll().stream()
+                .map(DTOMapper::toCommentDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public Comment getCommentById(Long id) {
-        return commentRepository.findById(id).orElseThrow(() -> new RuntimeException("Comment not found"));
+    public CommentDTO getCommentById(Long id) {
+        Comment comment = commentRepository.findById(id).orElseThrow(() -> new RuntimeException("Comment not found"));
+        return DTOMapper.toCommentDTO(comment);
     }
 
     @Override
-    public List<Comment> getCommentsByPostId(Long postId) {
+    public List<CommentDTO> getCommentsByPostId(Long postId) {
         if (!postRepository.existsById(postId)) {
             throw new RuntimeException("Post not found");
         }
-        return commentRepository.findByPostId(postId);
+        // Use JOIN FETCH query to avoid LazyInitializationException
+        return commentRepository.findByPostIdWithUser(postId).stream()
+                .map(DTOMapper::toCommentDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public Comment createComment(Comment comment) {
+    public CommentDTO createComment(Comment comment) {
         if (comment.getCreatedAt() == null) {
             comment.setCreatedAt(LocalDateTime.now());
         }
@@ -81,17 +90,17 @@ public class CommentImpl implements CommentService {
             }
         }
 
-
-        return saved;
+        return DTOMapper.toCommentDTO(saved);
     }
 
     @Override
-    public Comment updateComment(Long id, Comment comment) {
+    public CommentDTO updateComment(Long id, Comment comment) {
         Comment existingComment = commentRepository.findById(id).orElseThrow(() -> new RuntimeException("Comment not found"));
         existingComment.setContent(comment.getContent());
         existingComment.setCreatedAt(comment.getCreatedAt());
-        return commentRepository.save(existingComment);
+        return DTOMapper.toCommentDTO(commentRepository.save(existingComment));
     }
+
     @Override
     public void deleteComment(Long id) {
         if(!commentRepository.existsById(id)) {

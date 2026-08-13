@@ -1,5 +1,6 @@
 package com.example.blogsystem.controller;
 
+import com.example.blogsystem.dto.CommentDTO;
 import com.example.blogsystem.entity.Comment;
 import com.example.blogsystem.service.CommentService;
 import com.example.blogsystem.config.CurrentUser;
@@ -24,23 +25,23 @@ public class CommentController {
 
     // Lấy comments theo bài viết — bắt buộc truyền postId để tránh LazyInitializationException
     @GetMapping
-    public List<Comment> getComments(@RequestParam Long postId) {
+    public List<CommentDTO> getComments(@RequestParam Long postId) {
         return commentService.getCommentsByPostId(postId);
     }
 
     @GetMapping("/{id}")
-    public Comment getCommentById(@PathVariable Long id) {
+    public CommentDTO getCommentById(@PathVariable Long id) {
         return commentService.getCommentById(id);
     }
 
     @PostMapping
-    public Comment createComment(@RequestBody Comment comment) {
+    public CommentDTO createComment(@RequestBody Comment comment) {
         comment.setUser(userRepository.getReferenceById(currentUser.id()));
         return commentService.createComment(comment);
     }
 
     @PutMapping("/{id}")
-    public Comment updateComment(@PathVariable Long id,
+    public CommentDTO updateComment(@PathVariable Long id,
                                  @RequestBody Comment comment) {
         currentUser.requireOwnerOrAdmin(commentService.getCommentById(id).getUser().getId());
         return commentService.updateComment(id, comment);
