@@ -16,12 +16,18 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     List<Post> findByUserId(Long userId);
     Page<Post> findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(String title, String content, Pageable pageable);
 
-    @Query("SELECT p FROM Post p LEFT JOIN FETCH p.user LEFT JOIN FETCH p.category LEFT JOIN FETCH p.sharedPost WHERE p.id = :id")
+    @Query("SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.user LEFT JOIN FETCH p.category LEFT JOIN FETCH p.sharedPost WHERE p.id = :id")
     Optional<Post> findByIdWithRelations(Long id);
 
-    @Query("SELECT p FROM Post p LEFT JOIN FETCH p.user LEFT JOIN FETCH p.category LEFT JOIN FETCH p.sharedPost")
+    @Query("SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.user LEFT JOIN FETCH p.category LEFT JOIN FETCH p.sharedPost ORDER BY p.createdAt DESC")
     Page<Post> findAllWithRelations(Pageable pageable);
 
-    @Query("SELECT p FROM Post p LEFT JOIN FETCH p.user LEFT JOIN FETCH p.category LEFT JOIN FETCH p.sharedPost WHERE p.category.id = :categoryId")
+    @Query("SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.user LEFT JOIN FETCH p.category LEFT JOIN FETCH p.sharedPost WHERE p.category.id = :categoryId ORDER BY p.createdAt DESC")
     Page<Post> findByCategoryIdWithRelations(Long categoryId, Pageable pageable);
+
+    @Query("SELECT COUNT(DISTINCT p) FROM Post p")
+    Long countAllPosts();
+
+    @Query("SELECT COUNT(DISTINCT p) FROM Post p WHERE p.category.id = :categoryId")
+    Long countPostsByCategory(Long categoryId);
 }
