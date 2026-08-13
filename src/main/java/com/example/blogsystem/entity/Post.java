@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Data
@@ -44,6 +45,18 @@ public class Post {
     @JoinColumn(name = "shared_post_id", nullable = true)
     @JsonIgnoreProperties({"comments", "likes"})
     private Post sharedPost;
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<PostLike> likes;
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Comment> comments;
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Bookmark> bookmarks;
 
     public Post(Long id) {
         this.id = id;
