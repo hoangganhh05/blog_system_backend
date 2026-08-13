@@ -31,12 +31,24 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Page<Post> getAllPosts(Pageable pageable) {
-        return postRepository.findAllWithRelations(pageable);
+        Page<Post> idsPage = postRepository.findAllIds(pageable);
+        List<Long> ids = idsPage.getContent().stream().map(Post::getId).toList();
+        if (ids.isEmpty()) {
+            return idsPage;
+        }
+        List<Post> postsWithRelations = postRepository.findAllWithRelationsByIds(ids);
+        return new org.springframework.data.domain.PageImpl<>(postsWithRelations, pageable, idsPage.getTotalElements());
     }
 
     @Override
     public Page<Post> getPostsByCategory(Long categoryId, Pageable pageable) {
-        return postRepository.findByCategoryIdWithRelations(categoryId, pageable);
+        Page<Post> idsPage = postRepository.findIdsByCategoryId(categoryId, pageable);
+        List<Long> ids = idsPage.getContent().stream().map(Post::getId).toList();
+        if (ids.isEmpty()) {
+            return idsPage;
+        }
+        List<Post> postsWithRelations = postRepository.findAllWithRelationsByIds(ids);
+        return new org.springframework.data.domain.PageImpl<>(postsWithRelations, pageable, idsPage.getTotalElements());
     }
 
     @Override
