@@ -12,7 +12,7 @@ public interface PostService {
     Page<Post> getPostsByCategory(Long categoryId, Pageable pageable);
     Post getPostById(Long id);
 
-    Post createPost(Post post);
+    Post createPost(Post post, Long currentUserId);
 
     Post updatePost(Long id, Post post);
 

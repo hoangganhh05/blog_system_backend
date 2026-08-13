@@ -62,23 +62,7 @@ public class PostController {
     @PostMapping
     public PostDTO createPost(@RequestBody Post post) {
         try {
-            post.setUser(userRepository.getReferenceById(currentUser.id()));
-            Post savedPost = postService.createPost(post);
-
-            // Wrap DTO mapping in separate try-catch to prevent 500 if mapping fails
-            PostDTO postDTO;
-            try {
-                postDTO = DTOMapper.toPostDTO(savedPost);
-            } catch (Exception e) {
-                log.error("Lỗi mapping Post sang PostDTO cho bài viết id {}: ", savedPost.getId(), e);
-                // Return minimal DTO if mapping fails
-                postDTO = new PostDTO();
-                postDTO.setId(savedPost.getId());
-                postDTO.setTitle(savedPost.getTitle());
-                postDTO.setContent(savedPost.getContent());
-            }
-
-            return postDTO;
+            return DTOMapper.toPostDTO(postService.createPost(post, currentUser.id()));
         } catch (Exception e) {
             log.error("Lỗi tạo bài viết: ", e);
             throw e;
