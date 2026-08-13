@@ -59,20 +59,10 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
-                        // Cho phép tất cả request OPTIONS (CORS preflight)
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // Tất cả các endpoints công khai
-                        .requestMatchers("/auth/register", "/auth/login", "/auth/forgot-password", "/auth/reset-password").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/posts", "/posts/**", "/categories", "/categories/**", "/comments", "/comments/**", "/stories/active", "/uploads/**", "/games/caro/open-rooms", "/games/caro/room/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/posts/**/view").permitAll()
-
-                        // Các endpoint yêu cầu user đã xác thực
-                        .requestMatchers(HttpMethod.GET, "/users", "/users/**", "/notifications/**", "/friends/**").authenticated()
-
-                        .requestMatchers(HttpMethod.POST, "/categories/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/categories/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/categories/**").hasRole("ADMIN")
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/comments/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/posts/*/view").permitAll()
                         .anyRequest().authenticated()
                 )
 
