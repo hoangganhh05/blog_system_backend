@@ -6,6 +6,7 @@ import com.example.blogsystem.entity.Post;
 import com.example.blogsystem.repository.CategoryRepository;
 import com.example.blogsystem.repository.PostRepository;
 import com.example.blogsystem.service.PostService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@Slf4j
 public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
@@ -51,33 +53,27 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Post createPost(Post post) {
-        if (post.getCreatedAt() == null) {
-            post.setCreatedAt(LocalDateTime.now());
-        }
-        if (post.getViewCount() == null) {
-            post.setViewCount(0);
-        }
-
-        // Nếu người dùng không chọn danh mục -> Tự động chọn danh mục đầu tiên hoặc tạo "Chung"
-        if (post.getCategory() == null || post.getCategory().getId() == null) {
-            List<Category> allCats = categoryRepository.findAll();
-            if (!allCats.isEmpty()) {
-                post.setCategory(allCats.get(0));
-            } else {
-                Category defaultCat = new Category();
-                defaultCat.setName("Chung");
-                defaultCat.setDescription("Danh mục mặc định");
-                defaultCat.setCreatedAt(LocalDateTime.now());
-                post.setCategory(categoryRepository.save(defaultCat));
+        try {
+            if (post.getCreatedAt() == null) {
+                post.setCreatedAt(LocalDateTime.now());
             }
-        } else {
-            Category cat = categoryRepository.findById(post.getCategory().getId()).orElse(null);
-            if (cat != null) {
+            if (post.getViewCount() == null) {
+                post.setViewCount(0);
+            }
+
+            // Handle null category - set to null instead of throwing exception
+            if (post.getCategory() != null && post.getCategory().getId() != null) {
+                Category cat = categoryRepository.findById(post.getCategory().getId()).orElse(null);
                 post.setCategory(cat);
+            } else {
+                post.setCategory(null);
             }
-        }
 
-        return postRepository.save(post);
+            return postRepository.save(post);
+        } catch (Exception e) {
+            log.error("Lỗi tạo bài viết: ", e);
+            throw new RuntimeException("Không thể tạo bài viết: " + e.getMessage(), e);
+        }
     }
 
     @Override

@@ -8,6 +8,7 @@ import com.example.blogsystem.service.PostService;
 import com.example.blogsystem.config.CurrentUser;
 import com.example.blogsystem.repository.PostRepository;
 import com.example.blogsystem.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/posts")
+@Slf4j
 public class PostController {
 
     private final PostService postService;
@@ -59,8 +61,13 @@ public class PostController {
     }
     @PostMapping
     public PostDTO createPost(@RequestBody Post post) {
-        post.setUser(userRepository.getReferenceById(currentUser.id()));
-        return DTOMapper.toPostDTO(postService.createPost(post));
+        try {
+            post.setUser(userRepository.getReferenceById(currentUser.id()));
+            return DTOMapper.toPostDTO(postService.createPost(post));
+        } catch (Exception e) {
+            log.error("Lỗi tạo bài viết: ", e);
+            throw e;
+        }
     }
     @PutMapping("/{id}")
     public PostDTO updatePost(@PathVariable Long id, @RequestBody Post post) {
