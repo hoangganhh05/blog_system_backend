@@ -30,12 +30,12 @@ public class Post {
     // Số lượt xem — tự động +1 mỗi khi GET /posts/{id}
     private Integer viewCount = 0;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnoreProperties({"posts", "comments", "password"})
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id", nullable = true)
     @JsonIgnoreProperties({"posts", "Posts"})
     private Category category;

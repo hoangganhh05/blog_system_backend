@@ -20,19 +20,19 @@ public class Notification {
     private Long id;
 
     // Người nhận thông báo
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnoreProperties({"posts", "comments", "password"})
     private User user;
 
     // Người gây ra hành động (người comment/like)
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sender_id")
     @JsonIgnoreProperties({"posts", "comments", "password"})
     private User sender;
 
     // Bài viết liên quan
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "post_id")
     @JsonIgnoreProperties({"user", "category", "content"})
     private Post post;
