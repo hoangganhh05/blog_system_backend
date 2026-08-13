@@ -159,6 +159,8 @@ public class PostLikeServiceImpl implements PostLikeService {
                 userMap.put("id", user.getId());
                 userMap.put("username", user.getUsername());
                 userMap.put("fullName", user.getFullName());
+                userMap.put("avatarUrl", user.getAvatarUrl());
+                userMap.put("avatarColor", user.getAvatarColor());
                 item.put("user", userMap);
             }
 

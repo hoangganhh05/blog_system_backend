@@ -1,6 +1,8 @@
 package com.example.blogsystem.controller;
 
 
+import com.example.blogsystem.dto.PostDTO;
+import com.example.blogsystem.dto.DTOMapper;
 import com.example.blogsystem.entity.Post;
 import com.example.blogsystem.service.PostService;
 import com.example.blogsystem.config.CurrentUser;
@@ -29,38 +31,41 @@ public class PostController {
     }
 
     @GetMapping("/category/{categoryId}")
-    public Page<Post> getPostsByCategory(
+    public Page<PostDTO> getPostsByCategory(
             @PathVariable Long categoryId,
             Pageable pageable) {
 
-        return postService.getPostsByCategory(categoryId, pageable);
+        return postService.getPostsByCategory(categoryId, pageable)
+                .map(DTOMapper::toPostDTO);
     }
     @GetMapping
-    public Page<Post> getPosts(Pageable pageable) {
-        return postService.getAllPosts(pageable);
+    public Page<PostDTO> getPosts(Pageable pageable) {
+        return postService.getAllPosts(pageable)
+                .map(DTOMapper::toPostDTO);
     }
     @GetMapping("/search")
-    public Page<Post> searchPosts(@RequestParam String query, Pageable pageable) {
-        return postService.searchPosts(query, pageable);
+    public Page<PostDTO> searchPosts(@RequestParam String query, Pageable pageable) {
+        return postService.searchPosts(query, pageable)
+                .map(DTOMapper::toPostDTO);
     }
     @GetMapping("/{id}")
-    public Post getPostById(@PathVariable Long id) {
-        return postService.getPostById(id);
+    public PostDTO getPostById(@PathVariable Long id) {
+        return DTOMapper.toPostDTO(postService.getPostById(id));
     }
 
     @PostMapping("/{id}/view")
-    public Post incrementView(@PathVariable Long id) {
-        return postService.incrementViewCount(id);
+    public PostDTO incrementView(@PathVariable Long id) {
+        return DTOMapper.toPostDTO(postService.incrementViewCount(id));
     }
     @PostMapping
-    public Post createPost(@RequestBody Post post) {
+    public PostDTO createPost(@RequestBody Post post) {
         post.setUser(userRepository.getReferenceById(currentUser.id()));
-        return postService.createPost(post);
+        return DTOMapper.toPostDTO(postService.createPost(post));
     }
     @PutMapping("/{id}")
-    public Post updatePost(@PathVariable Long id, @RequestBody Post post) {
+    public PostDTO updatePost(@PathVariable Long id, @RequestBody Post post) {
         currentUser.requireOwnerOrAdmin(postRepository.findById(id).orElseThrow().getUser().getId());
-        return postService.updatePost(id, post);
+        return DTOMapper.toPostDTO(postService.updatePost(id, post));
     }
     @DeleteMapping("/{id}")
     public void deletePost(@PathVariable Long id) {

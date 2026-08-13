@@ -2,6 +2,7 @@ package com.example.blogsystem.repository;
 
 import com.example.blogsystem.entity.PostLike;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -13,5 +14,7 @@ public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
     boolean existsByUserIdAndPostId(Long userId, Long postId);
     Optional<PostLike> findByUserIdAndPostId(Long userId, Long postId);
     List<PostLike> findByUserId(Long userId);
+    
+    @Query("SELECT pl FROM PostLike pl JOIN FETCH pl.user u WHERE pl.post.id = :postId")
     List<PostLike> findByPostId(Long postId);
 }

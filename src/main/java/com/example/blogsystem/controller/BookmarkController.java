@@ -1,5 +1,7 @@
 package com.example.blogsystem.controller;
 
+import com.example.blogsystem.dto.BookmarkDTO;
+import com.example.blogsystem.dto.DTOMapper;
 import com.example.blogsystem.entity.Bookmark;
 import com.example.blogsystem.config.CurrentUser;
 import com.example.blogsystem.service.BookmarkService;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 public class BookmarkController {
@@ -40,9 +43,12 @@ public class BookmarkController {
     }
 
     @GetMapping("/users/{userId}/bookmarks")
-    public ResponseEntity<List<Bookmark>> getUserBookmarks(@PathVariable Long userId) {
+    public ResponseEntity<List<BookmarkDTO>> getUserBookmarks(@PathVariable Long userId) {
         currentUser.requireOwnerOrAdmin(userId);
         List<Bookmark> bookmarks = bookmarkService.getUserBookmarks(userId);
-        return ResponseEntity.ok(bookmarks);
+        List<BookmarkDTO> bookmarkDTOs = bookmarks.stream()
+                .map(DTOMapper::toBookmarkDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(bookmarkDTOs);
     }
 }
