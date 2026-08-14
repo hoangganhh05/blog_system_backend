@@ -3,7 +3,11 @@ package com.example.blogsystem.service.impl;
 import com.example.blogsystem.entity.Category;
 import com.example.blogsystem.entity.User;
 import com.example.blogsystem.entity.Post;
+import com.example.blogsystem.repository.BookmarkRepository;
 import com.example.blogsystem.repository.CategoryRepository;
+import com.example.blogsystem.repository.CommentRepository;
+import com.example.blogsystem.repository.NotificationRepository;
+import com.example.blogsystem.repository.PostLikeRepository;
 import com.example.blogsystem.repository.PostRepository;
 import com.example.blogsystem.repository.UserRepository;
 import com.example.blogsystem.service.PostService;
@@ -11,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,11 +27,25 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
+    private final BookmarkRepository bookmarkRepository;
+    private final PostLikeRepository postLikeRepository;
+    private final CommentRepository commentRepository;
 
-    public PostServiceImpl(PostRepository postRepository, CategoryRepository categoryRepository, UserRepository userRepository) {
+    public PostServiceImpl(PostRepository postRepository,
+                           CategoryRepository categoryRepository,
+                           UserRepository userRepository,
+                           NotificationRepository notificationRepository,
+                           BookmarkRepository bookmarkRepository,
+                           PostLikeRepository postLikeRepository,
+                           CommentRepository commentRepository) {
         this.postRepository = postRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
+        this.notificationRepository = notificationRepository;
+        this.bookmarkRepository = bookmarkRepository;
+        this.postLikeRepository = postLikeRepository;
+        this.commentRepository = commentRepository;
     }
 
     @Override
@@ -67,9 +86,9 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional
     public Post createPost(Post post, Long currentUserId) {
         try {
-            // Load User from DB to ensure fully loaded entity
             User currentUser = userRepository.findById(currentUserId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + currentUserId));
 
@@ -80,7 +99,6 @@ public class PostServiceImpl implements PostService {
                 post.setViewCount(0);
             }
 
-            // Handle null category - set to null instead of throwing exception
             if (post.getCategory() != null && post.getCategory().getId() != null) {
                 Category cat = categoryRepository.findById(post.getCategory().getId()).orElse(null);
                 post.setCategory(cat);
@@ -88,7 +106,6 @@ public class PostServiceImpl implements PostService {
                 post.setCategory(null);
             }
 
-            // Set the fully loaded User
             post.setUser(currentUser);
 
             return postRepository.save(post);
@@ -99,28 +116,64 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional
     public Post updatePost(Long id, Post post) {
-        Post existingPost = postRepository.findById(id).
-                orElseThrow(() -> new RuntimeException("Post not found"));
-        existingPost.setTitle(post.getTitle());
-        existingPost.setContent(post.getContent());
-        existingPost.setThumbNail(post.getThumbNail());
-        existingPost.setStatus(post.getStatus());
-        existingPost.setBgColor(post.getBgColor());
-        existingPost.setCategory(post.getCategory());
-
-        // Nếu cho phép đổi tác giả thì mới update user
-        // existingPost.setUser(post.getUser());
+        Post existingPost = postRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+        
+        if (post.getTitle() != null && !post.getTitle().trim().isEmpty()) {
+            existingPost.setTitle(post.getTitle());
+        }
+        if (post.getContent() != null) {
+            existingPost.setContent(post.getContent());
+        }
+        if (post.getThumbNail() != null) {
+            existingPost.setThumbNail(post.getThumbNail());
+        }
+        if (post.getStatus() != null) {
+            existingPost.setStatus(post.getStatus());
+        }
+        if (post.getBgColor() != null) {
+            existingPost.setBgColor(post.getBgColor());
+        }
+        if (post.getCategory() != null && post.getCategory().getId() != null) {
+            Category cat = categoryRepository.findById(post.getCategory().getId()).orElse(null);
+            existingPost.setCategory(cat);
+        }
 
         existingPost.setUpdatedAt(LocalDateTime.now());
         return postRepository.save(existingPost);
     }
+
     @Override
+    @Transactional
     public void deletePost(Long id) {
-        if(!postRepository.existsById(id)) {
-            throw new RuntimeException("Post not found");
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+        
+        // Dọn dẹp các ràng buộc khóa ngoại trước khi xóa post
+        try {
+            notificationRepository.deleteByPostId(id);
+        } catch (Exception e) {
+            log.warn("Không thể xóa notifications cho post: {}", id, e);
         }
-        postRepository.deleteById(id);
+        try {
+            bookmarkRepository.deleteByPostId(id);
+        } catch (Exception e) {
+            log.warn("Không thể xóa bookmarks cho post: {}", id, e);
+        }
+        try {
+            postLikeRepository.deleteByPostId(id);
+        } catch (Exception e) {
+            log.warn("Không thể xóa likes cho post: {}", id, e);
+        }
+        try {
+            commentRepository.deleteByPostId(id);
+        } catch (Exception e) {
+            log.warn("Không thể xóa comments cho post: {}", id, e);
+        }
+
+        postRepository.delete(post);
     }
 
     @Override
@@ -128,4 +181,3 @@ public class PostServiceImpl implements PostService {
         return postRepository.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(query, query, pageable);
     }
 }
-

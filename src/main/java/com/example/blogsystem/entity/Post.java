@@ -59,6 +59,14 @@ public class Post {
     @JsonIgnore
     private List<Bookmark> bookmarks;
 
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Notification> notifications;
+
+    @OneToMany(mappedBy = "sharedPost", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Post> sharedPosts;
+
     public Post(Long id) {
         this.id = id;
     }
