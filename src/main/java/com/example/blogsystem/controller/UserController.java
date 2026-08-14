@@ -1,6 +1,7 @@
 package com.example.blogsystem.controller;
 
 import com.example.blogsystem.dto.DTOMapper;
+import com.example.blogsystem.dto.UserProfileDTO;
 import com.example.blogsystem.dto.UserPublicDTO;
 import com.example.blogsystem.entity.User;
 import com.example.blogsystem.service.UserService;
@@ -11,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping({"/users", "/api/v1/users"})
 public class UserController {
 
     private final UserService userService;
@@ -43,6 +44,13 @@ public class UserController {
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size) {
         return getUsers(query, q, page, size);
+    }
+
+    @GetMapping("/me")
+    public UserProfileDTO getMyProfile() {
+        Long myId = currentUser.id();
+        User user = userService.getUserById(myId);
+        return DTOMapper.toUserProfileDTO(user);
     }
 
     @GetMapping("/{id}")

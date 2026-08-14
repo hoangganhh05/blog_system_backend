@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/chat")
+@RequestMapping({"/chat", "/api/v1/chat"})
 @Slf4j
 public class ChatController {
 
@@ -41,23 +41,32 @@ public class ChatController {
         }
     }
 
-    // Lấy lịch sử nhắn tin giữa 2 người: GET /chat/history?user1=...&user2=...
+    // Lấy lịch sử nhắn tin chuẩn REST: GET /chat/history?withUser=...
     @GetMapping("/history")
     public ResponseEntity<List<ChatMessageDTO>> getChatHistory(
-            @RequestParam Long user1,
-            @RequestParam Long user2) {
+            @RequestParam(required = false) Long withUser,
+            @RequestParam(required = false) Long user1,
+            @RequestParam(required = false) Long user2) {
         try {
             Long callerId = currentUser.id();
-            if (!callerId.equals(user1) && !callerId.equals(user2)) {
-                throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
+            Long targetUser = withUser;
+            if (targetUser == null) {
+                if (user1 != null && user2 != null) {
+                    if (!callerId.equals(user1) && !callerId.equals(user2)) {
+                        throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
+                    }
+                    targetUser = callerId.equals(user1) ? user2 : user1;
+                } else {
+                    throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Thiếu tham số target user");
+                }
             }
-            List<ChatMessage> history = chatMessageService.getChatHistory(user1, user2);
+            List<ChatMessage> history = chatMessageService.getChatHistory(callerId, targetUser);
             List<ChatMessageDTO> dtos = history.stream()
                     .map(DTOMapper::toChatMessageDTO)
                     .collect(Collectors.toList());
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
-            log.error("Lỗi lấy lịch sử chat giữa user {} và {}: ", user1, user2, e);
+            log.error("Lỗi lấy lịch sử chat cho user {}: ", currentUser.id(), e);
             throw e;
         }
     }

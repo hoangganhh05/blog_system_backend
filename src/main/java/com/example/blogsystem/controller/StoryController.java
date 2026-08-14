@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/stories")
+@RequestMapping({"/stories", "/api/v1/stories"})
 public class StoryController {
 
     private final StoryService storyService;

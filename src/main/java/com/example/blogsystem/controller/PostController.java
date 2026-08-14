@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/posts")
+@RequestMapping({"/posts", "/api/v1/posts"})
 @Slf4j
 public class PostController {
 

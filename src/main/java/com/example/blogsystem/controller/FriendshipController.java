@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/friends")
+@RequestMapping({"/friends", "/api/v1/friends"})
 public class FriendshipController {
 
     private final FriendshipService friendshipService;
@@ -58,12 +58,16 @@ public class FriendshipController {
     // Hủy kết bạn hoặc rút/từ chối lời mời: POST /friends/remove?userId1=...&userId2=...
     @PostMapping("/remove")
     public ResponseEntity<Map<String, Object>> removeFriendship(
-            @RequestParam Long userId1,
-            @RequestParam Long userId2) {
-        if (!currentUser.id().equals(userId1) && !currentUser.id().equals(userId2)) {
+            @RequestParam(required = false) Long userId1,
+            @RequestParam(required = false) Long userId2,
+            @RequestParam(required = false) Long targetUserId) {
+        Long u1 = (userId1 != null) ? userId1 : currentUser.id();
+        Long u2 = (userId2 != null) ? userId2 : targetUserId;
+
+        if (!currentUser.id().equals(u1) && !currentUser.id().equals(u2)) {
             throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
         }
-        Map<String, Object> result = friendshipService.removeOrCancelFriendship(userId1, userId2);
+        Map<String, Object> result = friendshipService.removeOrCancelFriendship(u1, u2);
         return ResponseEntity.ok(result);
     }
 
@@ -77,14 +81,26 @@ public class FriendshipController {
         return ResponseEntity.ok(result);
     }
 
+    // Lấy danh sách bạn bè đã kết bạn của chính mình: GET /friends/list
+    @GetMapping("/list")
+    public ResponseEntity<List<UserPublicDTO>> getMyFriendsList() {
+        return getFriendsList(currentUser.id());
+    }
+
     // Lấy danh sách bạn bè đã kết bạn: GET /friends/list/{userId}
-    @GetMapping("/list/{userId}")
+    @GetMapping({"/list/{userId}", "/{userId}"})
     public ResponseEntity<List<UserPublicDTO>> getFriendsList(@PathVariable Long userId) {
         List<User> friends = friendshipService.getFriendsList(userId);
         List<UserPublicDTO> dtos = friends.stream()
                 .map(DTOMapper::toUserPublicDTO)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
+    }
+
+    // Lấy danh sách lời mời kết bạn đang chờ của chính mình: GET /friends/pending
+    @GetMapping("/pending")
+    public ResponseEntity<List<FriendshipDTO>> getMyPendingRequests() {
+        return getPendingRequests(currentUser.id());
     }
 
     // Lấy danh sách lời mời kết bạn đang chờ: GET /friends/pending/{userId}
@@ -98,10 +114,11 @@ public class FriendshipController {
         return ResponseEntity.ok(dtos);
     }
 
-    // Đếm số bạn bè: GET /friends/count/{userId}
-    @GetMapping("/count/{userId}")
-    public ResponseEntity<Map<String, Object>> getFriendCount(@PathVariable Long userId) {
-        long count = friendshipService.getFriendCount(userId);
+    // Đếm số bạn bè: GET /friends/count hoặc GET /friends/count/{userId}
+    @GetMapping({"/count", "/count/{userId}"})
+    public ResponseEntity<Map<String, Object>> getFriendCount(@PathVariable(required = false) Long userId) {
+        Long targetId = (userId != null) ? userId : currentUser.id();
+        long count = friendshipService.getFriendCount(targetId);
         Map<String, Object> result = new HashMap<>();
         result.put("count", count);
         return ResponseEntity.ok(result);

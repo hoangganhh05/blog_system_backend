@@ -8,7 +8,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
-@RequestMapping("/games/caro")
+@RequestMapping({"/games/caro", "/api/v1/games/caro"})
 public class CaroGameController {
 
     public static class CaroRoom {

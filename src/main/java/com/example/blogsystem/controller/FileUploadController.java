@@ -17,7 +17,7 @@ import java.util.UUID;
 import java.util.Set;
 
 @RestController
-@RequestMapping("/upload")
+@RequestMapping({"/upload", "/api/v1/upload"})
 public class FileUploadController {
 
     private static final Path UPLOAD_DIR = Paths.get("uploads").toAbsolutePath().normalize();

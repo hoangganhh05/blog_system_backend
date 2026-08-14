@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/notifications")
+@RequestMapping({"/notifications", "/api/v1/notifications"})
 public class NotificationController {
 
     private final NotificationService notificationService;
