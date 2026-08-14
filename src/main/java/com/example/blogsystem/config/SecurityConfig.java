@@ -65,6 +65,9 @@ public class SecurityConfig {
                         // Public Auth endpoints
                         .requestMatchers("/auth/**", "/api/auth/**", "/v1/auth/**", "/api/v1/auth/**").permitAll()
 
+                        // Public AI Assistant endpoints
+                        .requestMatchers("/ai/**", "/api/ai/**", "/v1/ai/**", "/api/v1/ai/**").permitAll()
+
                         // File Upload static resources
                         .requestMatchers(HttpMethod.GET, "/uploads/**", "/api/uploads/**", "/v1/uploads/**", "/api/v1/uploads/**").permitAll()
 

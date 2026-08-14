@@ -10,11 +10,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -22,10 +22,10 @@ import java.util.Map;
 public class AiServiceImpl implements AiService {
 
     @Value("${GEMINI_API_KEY:${gemini.api-key:}}")
-    private String apiKey;
+    private String rawApiKey;
 
     @Value("${GEMINI_MODEL:${gemini.model:gemini-1.5-flash}}")
-    private String model;
+    private String rawModel;
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -36,9 +36,15 @@ public class AiServiceImpl implements AiService {
             return "Xin chào! Bạn muốn mình hỗ trợ gì hôm nay?";
         }
 
-        if (apiKey == null || apiKey.trim().isEmpty()) {
-            log.warn("GEMINI_API_KEY chưa được cấu hình trong biến môi trường!");
-            return "Trợ lý AI chưa được cấu hình API Key. Vui lòng thiết lập biến môi trường GEMINI_API_KEY trên server!";
+        String apiKey = rawApiKey != null ? rawApiKey.trim().replace("\"", "").replace("'", "") : "";
+        String model = rawModel != null && !rawModel.trim().isEmpty() ? rawModel.trim() : "gemini-1.5-flash";
+
+        boolean hasKey = !apiKey.isEmpty();
+        log.info("[GEMINI DEBUG] API Key loaded: {} (length: {}), model: {}", hasKey, apiKey.length(), model);
+
+        if (!hasKey) {
+            log.warn("[GEMINI WARN] GEMINI_API_KEY chưa được cấu hình trong biến môi trường server!");
+            return "Trợ lý AI chưa được kích hoạt API Key trên server. Vui lòng thêm biến môi trường GEMINI_API_KEY trong cấu hình Render!";
         }
 
         try {
@@ -46,6 +52,7 @@ public class AiServiceImpl implements AiService {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("x-goog-api-key", apiKey);
 
             // Construct payload
             Map<String, Object> body = new HashMap<>();
@@ -56,7 +63,7 @@ public class AiServiceImpl implements AiService {
             userContent.put("parts", Collections.singletonList(Collections.singletonMap("text", prompt.trim())));
             body.put("contents", Collections.singletonList(userContent));
 
-            // System Instruction - Chuyên gia BlogViet Platform (Văn phong tự nhiên, không rập khuôn)
+            // System Instruction - Chuyên gia BlogViet Platform
             String systemPrompt = """
                     Bạn là Trợ lý AI của hệ thống BlogViet (https://anhhoangg.id.vn/). 
                     Sứ mệnh: Hỗ trợ người dùng sáng tạo nội dung, gợi ý ý tưởng và hướng dẫn sử dụng nền tảng hiệu quả.
@@ -87,6 +94,8 @@ public class AiServiceImpl implements AiService {
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
+            log.info("[GEMINI DEBUG] Sending request to Google Gemini API: {} with prompt excerpt: {}", url.substring(0, url.indexOf("?key=")), prompt.length() > 40 ? prompt.substring(0, 40) + "..." : prompt);
+
             ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
@@ -95,15 +104,22 @@ public class AiServiceImpl implements AiService {
                 if (candidates.isArray() && !candidates.isEmpty()) {
                     JsonNode textNode = candidates.get(0).path("content").path("parts").get(0).path("text");
                     if (!textNode.isMissingNode()) {
-                        return textNode.asText();
+                        String reply = textNode.asText();
+                        log.info("[GEMINI SUCCESS] Received reply (length: {})", reply.length());
+                        return reply;
                     }
                 }
             }
 
+            log.warn("[GEMINI WARN] Google returned 200 but no valid candidates: {}", response.getBody());
             return "Xin lỗi bạn, mình chưa hiểu rõ yêu cầu. Bạn có thể diễn đạt lại câu hỏi giúp mình không?";
+        } catch (HttpStatusCodeException httpEx) {
+            log.error("[GEMINI HTTP ERROR] Status: {} - Response Body: {}", httpEx.getStatusCode(), httpEx.getResponseBodyAsString());
+            return "Google Gemini API phản hồi lỗi (" + httpEx.getStatusCode() + "). Chi tiết: " + httpEx.getResponseBodyAsString();
         } catch (Exception e) {
-            log.error("Lỗi khi gọi Google Gemini API: {}", e.getMessage());
-            return "Hiện tại hệ thống Trợ lý AI đang bận hoặc gián đoạn kết nối. Bạn vui lòng thử lại sau giây lát nhé!";
+            log.error("[GEMINI UNEXPECTED ERROR] Lỗi không xác định khi gọi Google Gemini API: ", e);
+            e.printStackTrace();
+            return "Hiện tại hệ thống Trợ lý AI đang bận hoặc gián đoạn kết nối (" + e.getMessage() + "). Bạn vui lòng thử lại sau giây lát nhé!";
         }
     }
 }
