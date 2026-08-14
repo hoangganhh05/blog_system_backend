@@ -1,5 +1,8 @@
 package com.example.blogsystem.controller;
 
+import com.example.blogsystem.dto.DTOMapper;
+import com.example.blogsystem.dto.FriendshipDTO;
+import com.example.blogsystem.dto.UserPublicDTO;
 import com.example.blogsystem.entity.Friendship;
 import com.example.blogsystem.entity.User;
 import com.example.blogsystem.service.FriendshipService;
@@ -10,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/friends")
@@ -23,7 +27,7 @@ public class FriendshipController {
         this.currentUser = currentUser;
     }
 
-    // Gửi lời mời kết bạn: POST /friends/request?senderId=...&receiverId=...
+    // Gửi lời mời kết bạn: POST /friends/request?receiverId=...
     @PostMapping("/request")
     public ResponseEntity<Map<String, Object>> sendRequest(
             @RequestParam Long receiverId) {
@@ -37,7 +41,7 @@ public class FriendshipController {
         }
     }
 
-    // Chấp nhận lời mời kết bạn: POST /friends/accept?currentUserId=...&requesterId=...
+    // Chấp nhận lời mời kết bạn: POST /friends/accept?requesterId=...
     @PostMapping("/accept")
     public ResponseEntity<Map<String, Object>> acceptRequest(
             @RequestParam Long requesterId) {
@@ -63,7 +67,7 @@ public class FriendshipController {
         return ResponseEntity.ok(result);
     }
 
-    // Kiểm tra trạng thái kết bạn giữa 2 người: GET /friends/status?currentUserId=...&targetUserId=...
+    // Kiểm tra trạng thái kết bạn giữa 2 người: GET /friends/status?targetUserId=...
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> getStatus(
             @RequestParam Long targetUserId) {
@@ -75,17 +79,23 @@ public class FriendshipController {
 
     // Lấy danh sách bạn bè đã kết bạn: GET /friends/list/{userId}
     @GetMapping("/list/{userId}")
-    public ResponseEntity<List<User>> getFriendsList(@PathVariable Long userId) {
+    public ResponseEntity<List<UserPublicDTO>> getFriendsList(@PathVariable Long userId) {
         List<User> friends = friendshipService.getFriendsList(userId);
-        return ResponseEntity.ok(friends);
+        List<UserPublicDTO> dtos = friends.stream()
+                .map(DTOMapper::toUserPublicDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 
     // Lấy danh sách lời mời kết bạn đang chờ: GET /friends/pending/{userId}
     @GetMapping("/pending/{userId}")
-    public ResponseEntity<List<Friendship>> getPendingRequests(@PathVariable Long userId) {
+    public ResponseEntity<List<FriendshipDTO>> getPendingRequests(@PathVariable Long userId) {
         currentUser.requireOwnerOrAdmin(userId);
         List<Friendship> pending = friendshipService.getPendingRequests(userId);
-        return ResponseEntity.ok(pending);
+        List<FriendshipDTO> dtos = pending.stream()
+                .map(DTOMapper::toFriendshipDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 
     // Đếm số bạn bè: GET /friends/count/{userId}

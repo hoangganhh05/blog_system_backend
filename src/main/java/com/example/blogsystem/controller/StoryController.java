@@ -1,6 +1,10 @@
 package com.example.blogsystem.controller;
 
+import com.example.blogsystem.dto.DTOMapper;
+import com.example.blogsystem.dto.StoryDTO;
+import com.example.blogsystem.dto.StoryViewDTO;
 import com.example.blogsystem.entity.Story;
+import com.example.blogsystem.entity.StoryView;
 import com.example.blogsystem.service.StoryService;
 import com.example.blogsystem.config.CurrentUser;
 import com.example.blogsystem.repository.StoryRepository;
@@ -9,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/stories")
@@ -24,24 +29,26 @@ public class StoryController {
         this.currentUser = currentUser;
     }
 
-    // Đăng Story mới: POST /stories/create?userId=...
-    // Request Body: { "mediaUrl": "...", "textContent": "...", "bgColor": "..." }
+    // Đăng Story mới: POST /stories/create
     @PostMapping("/create")
-    public ResponseEntity<Story> createStory(
+    public ResponseEntity<StoryDTO> createStory(
             @RequestBody Map<String, String> payload) {
         String mediaUrl = payload.get("mediaUrl");
         String textContent = payload.get("textContent");
         String bgColor = payload.get("bgColor");
 
         Story story = storyService.createStory(currentUser.id(), mediaUrl, textContent, bgColor);
-        return ResponseEntity.ok(story);
+        return ResponseEntity.ok(DTOMapper.toStoryDTO(story));
     }
 
     // Lấy tất cả Story còn hiệu lực (24h qua): GET /stories/active
     @GetMapping("/active")
-    public ResponseEntity<List<Story>> getActiveStories() {
+    public ResponseEntity<List<StoryDTO>> getActiveStories() {
         List<Story> stories = storyService.getActiveStories();
-        return ResponseEntity.ok(stories);
+        List<StoryDTO> dtos = stories.stream()
+                .map(DTOMapper::toStoryDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 
     // Xóa Story: DELETE /stories/{id}
@@ -56,7 +63,7 @@ public class StoryController {
         }
     }
 
-    // Ghi nhận lượt xem Story: POST /stories/{id}/view?userId=...
+    // Ghi nhận lượt xem Story: POST /stories/{id}/view
     @PostMapping("/{id}/view")
     public ResponseEntity<Void> recordView(
             @PathVariable Long id) {
@@ -64,7 +71,7 @@ public class StoryController {
         return ResponseEntity.ok().build();
     }
 
-    // Thả cảm xúc Story: POST /stories/{id}/react?userId=...&reaction=...
+    // Thả cảm xúc Story: POST /stories/{id}/react?reaction=...
     @PostMapping("/{id}/react")
     public ResponseEntity<Void> reactToStory(
             @PathVariable Long id,
@@ -75,9 +82,12 @@ public class StoryController {
 
     // Lấy danh sách người xem & cảm xúc Story: GET /stories/{id}/viewers
     @GetMapping("/{id}/viewers")
-    public ResponseEntity<List<com.example.blogsystem.entity.StoryView>> getViewers(@PathVariable Long id) {
+    public ResponseEntity<List<StoryViewDTO>> getViewers(@PathVariable Long id) {
         currentUser.requireOwnerOrAdmin(storyRepository.findById(id).orElseThrow().getUser().getId());
-        List<com.example.blogsystem.entity.StoryView> views = storyService.getStoryViews(id);
-        return ResponseEntity.ok(views);
+        List<StoryView> views = storyService.getStoryViews(id);
+        List<StoryViewDTO> dtos = views.stream()
+                .map(DTOMapper::toStoryViewDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 }

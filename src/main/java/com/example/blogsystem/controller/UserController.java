@@ -1,5 +1,6 @@
 package com.example.blogsystem.controller;
 
+import com.example.blogsystem.dto.DTOMapper;
 import com.example.blogsystem.dto.UserPublicDTO;
 import com.example.blogsystem.entity.User;
 import com.example.blogsystem.service.UserService;
@@ -7,9 +8,7 @@ import com.example.blogsystem.config.CurrentUser;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/users")
@@ -34,7 +33,7 @@ public class UserController {
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(Math.max(page, 0), pageSize);
 
         return userService.searchUsers(searchKeyword, pageable)
-                .map(com.example.blogsystem.dto.DTOMapper::toUserPublicDTO);
+                .map(DTOMapper::toUserPublicDTO);
     }
 
     @GetMapping("/search")
@@ -47,21 +46,32 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public UserPublicDTO getUserById(@PathVariable Long id) {
-        return com.example.blogsystem.dto.DTOMapper.toUserPublicDTO(userService.getUserById(id));
+    public Object getUserById(@PathVariable Long id) {
+        User user = userService.getUserById(id);
+        if (currentUser.id() != null && currentUser.id().equals(id)) {
+            // Chính chủ gọi API của mình: Trả về UserProfileDTO
+            return DTOMapper.toUserProfileDTO(user);
+        }
+        // Người khác xem profile: Trả về UserPublicDTO không chứa email/nhạy cảm
+        return DTOMapper.toUserPublicDTO(user);
     }
 
     @PostMapping
-    public User createUser(@RequestBody User user) {
+    public UserPublicDTO createUser(@RequestBody User user) {
         if (!currentUser.isAdmin()) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
-        return userService.createUser(user);
+        User saved = userService.createUser(user);
+        return DTOMapper.toUserPublicDTO(saved);
     }
 
     @PutMapping("/{id}")
-    public User updateUser(@PathVariable Long id,
-                           @RequestBody User user) {
+    public Object updateUser(@PathVariable Long id,
+                             @RequestBody User user) {
         currentUser.requireOwnerOrAdmin(id);
-        return userService.updateUser(id, user);
+        User updated = userService.updateUser(id, user);
+        if (currentUser.id() != null && currentUser.id().equals(id)) {
+            return DTOMapper.toUserProfileDTO(updated);
+        }
+        return DTOMapper.toUserPublicDTO(updated);
     }
 
     @DeleteMapping("/{id}")
@@ -71,7 +81,6 @@ public class UserController {
     }
 
     // Đổi mật khẩu: PUT /users/{id}/change-password
-    // Body: { "oldPassword": "...", "newPassword": "..." }
     @PutMapping("/{id}/change-password")
     public ResponseEntity<?> changePassword(
             @PathVariable Long id,
@@ -95,5 +104,3 @@ public class UserController {
         return ResponseEntity.ok(stats);
     }
 }
-
-

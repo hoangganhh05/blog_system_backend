@@ -2,16 +2,21 @@ package com.example.blogsystem.dto;
 
 import com.example.blogsystem.entity.Bookmark;
 import com.example.blogsystem.entity.Category;
+import com.example.blogsystem.entity.ChatMessage;
 import com.example.blogsystem.entity.Comment;
+import com.example.blogsystem.entity.Friendship;
+import com.example.blogsystem.entity.Notification;
 import com.example.blogsystem.entity.Post;
 import com.example.blogsystem.entity.PostLike;
+import com.example.blogsystem.entity.Story;
+import com.example.blogsystem.entity.StoryView;
 import com.example.blogsystem.entity.User;
 
 public class DTOMapper {
-    
+
     public static PostDTO toPostDTO(Post post) {
         if (post == null) return null;
-        
+
         PostDTO dto = new PostDTO();
         dto.setId(post.getId());
         dto.setTitle(post.getTitle());
@@ -22,25 +27,25 @@ public class DTOMapper {
         dto.setCreatedAt(post.getCreatedAt());
         dto.setUpdatedAt(post.getUpdatedAt());
         dto.setViewCount(post.getViewCount());
-        
+
         if (post.getUser() != null) {
             dto.setUser(toUserPublicDTO(post.getUser()));
         }
-        
+
         if (post.getCategory() != null) {
-            dto.setCategory(toCategoryDTO(post.getCategory()));
+            dto.setCategory(toPostCategoryDTO(post.getCategory()));
         }
-        
+
         if (post.getSharedPost() != null) {
             dto.setSharedPost(toPostDTO(post.getSharedPost()));
         }
-        
+
         return dto;
     }
-    
+
     public static UserPublicDTO toUserPublicDTO(User user) {
         if (user == null) return null;
-        
+
         UserPublicDTO dto = new UserPublicDTO();
         dto.setId(user.getId());
         dto.setUsername(user.getUsername());
@@ -49,39 +54,67 @@ public class DTOMapper {
         dto.setAvatarColor(user.getAvatarColor());
         dto.setAvatarUrl(user.getAvatarUrl());
         dto.setBannerUrl(user.getBannerUrl());
-        
+
         return dto;
     }
-    
-    public static PostDTO.CategoryDTO toCategoryDTO(Category category) {
+
+    public static UserProfileDTO toUserProfileDTO(User user) {
+        if (user == null) return null;
+
+        UserProfileDTO dto = new UserProfileDTO();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setFullName(user.getFullName());
+        dto.setEmail(user.getEmail());
+        dto.setBio(user.getBio());
+        dto.setAvatarColor(user.getAvatarColor());
+        dto.setAvatarUrl(user.getAvatarUrl());
+        dto.setBannerUrl(user.getBannerUrl());
+        dto.setEmailPrivacy(user.getEmailPrivacy());
+
+        return dto;
+    }
+
+    public static CategoryDTO toCategoryDTO(Category category) {
         if (category == null) return null;
-        
+
+        CategoryDTO dto = new CategoryDTO();
+        dto.setId(category.getId());
+        dto.setName(category.getName());
+        dto.setDescription(category.getDescription());
+
+        return dto;
+    }
+
+    public static PostDTO.CategoryDTO toPostCategoryDTO(Category category) {
+        if (category == null) return null;
+
         PostDTO.CategoryDTO dto = new PostDTO.CategoryDTO();
         dto.setId(category.getId());
         dto.setName(category.getName());
         dto.setDescription(category.getDescription());
-        
+
         return dto;
     }
-    
+
     public static BookmarkDTO toBookmarkDTO(Bookmark bookmark) {
         if (bookmark == null) return null;
-        
+
         BookmarkDTO dto = new BookmarkDTO();
         dto.setId(bookmark.getId());
         dto.setCreatedAt(bookmark.getCreatedAt());
-        
+
         if (bookmark.getUser() != null) {
             dto.setUser(toUserPublicDTO(bookmark.getUser()));
         }
-        
+
         if (bookmark.getPost() != null) {
             dto.setPost(toPostDTO(bookmark.getPost()));
         }
-        
+
         return dto;
     }
-    
+
     public static UserReactionDTO toUserReactionDTO(PostLike postLike) {
         if (postLike == null) return null;
 
@@ -116,6 +149,79 @@ public class DTOMapper {
         if (comment.getUser() != null) {
             dto.setUser(toUserPublicDTO(comment.getUser()));
         }
+
+        return dto;
+    }
+
+    public static ChatMessageDTO toChatMessageDTO(ChatMessage message) {
+        if (message == null) return null;
+
+        ChatMessageDTO dto = new ChatMessageDTO();
+        dto.setId(message.getId());
+        dto.setSender(toUserPublicDTO(message.getSender()));
+        dto.setReceiver(toUserPublicDTO(message.getReceiver()));
+        dto.setContent(message.getContent());
+        dto.setRead(message.isRead());
+        dto.setCreatedAt(message.getCreatedAt());
+
+        return dto;
+    }
+
+    public static FriendshipDTO toFriendshipDTO(Friendship friendship) {
+        if (friendship == null) return null;
+
+        FriendshipDTO dto = new FriendshipDTO();
+        dto.setId(friendship.getId());
+        dto.setRequester(toUserPublicDTO(friendship.getRequester()));
+        dto.setReceiver(toUserPublicDTO(friendship.getReceiver()));
+        dto.setStatus(friendship.getStatus());
+        dto.setCreatedAt(friendship.getCreatedAt());
+
+        return dto;
+    }
+
+    public static NotificationDTO toNotificationDTO(Notification notification) {
+        if (notification == null) return null;
+
+        NotificationDTO dto = new NotificationDTO();
+        dto.setId(notification.getId());
+        dto.setUser(toUserPublicDTO(notification.getUser()));
+        dto.setSender(toUserPublicDTO(notification.getSender()));
+        if (notification.getPost() != null) {
+            dto.setPostId(notification.getPost().getId());
+        }
+        dto.setMessage(notification.getMessage());
+        dto.setRead(notification.isRead());
+        dto.setCreatedAt(notification.getCreatedAt());
+
+        return dto;
+    }
+
+    public static StoryDTO toStoryDTO(Story story) {
+        if (story == null) return null;
+
+        StoryDTO dto = new StoryDTO();
+        dto.setId(story.getId());
+        dto.setUser(toUserPublicDTO(story.getUser()));
+        dto.setMediaUrl(story.getMediaUrl());
+        dto.setTextContent(story.getTextContent());
+        dto.setBgColor(story.getBgColor());
+        dto.setCreatedAt(story.getCreatedAt());
+
+        return dto;
+    }
+
+    public static StoryViewDTO toStoryViewDTO(StoryView view) {
+        if (view == null) return null;
+
+        StoryViewDTO dto = new StoryViewDTO();
+        dto.setId(view.getId());
+        if (view.getStory() != null) {
+            dto.setStoryId(view.getStory().getId());
+        }
+        dto.setUser(toUserPublicDTO(view.getUser()));
+        dto.setViewedAt(view.getViewedAt());
+        dto.setReaction(view.getReaction());
 
         return dto;
     }

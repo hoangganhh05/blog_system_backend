@@ -55,8 +55,8 @@ public class FileUploadController {
             // Lưu tệp vào đĩa
             Files.copy(file.getInputStream(), filepath);
 
-            // Tạo URL để client truy cập
-            String fileUrl = "http://localhost:8080/uploads/" + newFilename;
+            // Tạo URL đường dẫn tương đối để client truy cập qua Reverse Proxy
+            String fileUrl = "/uploads/" + newFilename;
 
             Map<String, Object> response = new HashMap<>();
             response.put("url", fileUrl);

@@ -42,6 +42,11 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    public org.springframework.data.domain.Page<Notification> getUserNotificationsPaginated(Long userId, org.springframework.data.domain.Pageable pageable) {
+        return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+    }
+
+    @Override
     public long getUnreadCount(Long userId) {
         return notificationRepository.countUnreadByUserId(userId);
     }
