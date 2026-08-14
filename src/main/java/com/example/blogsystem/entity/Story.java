@@ -25,7 +25,7 @@ public class Story {
     @JsonIgnoreProperties({"posts", "comments", "password"})
     private User user;
 
-    // Đường dẫn ảnh (story ảnh)
+    // Đường dẫn ảnh/video (story ảnh/video)
     @Column(name = "media_url", length = 512)
     private String mediaUrl;
 
@@ -39,4 +39,12 @@ public class Story {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    // Thời điểm hết hạn 24h
+    @Column(name = "expires_at")
+    private LocalDateTime expiresAt;
+
+    // Cờ lưu trữ (khi hết hạn chuyển thành true để lưu vào kho lưu trữ cá nhân)
+    @Column(name = "is_archived")
+    private Boolean isArchived = false;
 }

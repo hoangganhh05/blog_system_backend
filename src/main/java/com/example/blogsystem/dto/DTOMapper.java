@@ -207,6 +207,8 @@ public class DTOMapper {
         dto.setTextContent(story.getTextContent());
         dto.setBgColor(story.getBgColor());
         dto.setCreatedAt(story.getCreatedAt());
+        dto.setExpiresAt(story.getExpiresAt());
+        dto.setIsArchived(story.getIsArchived());
 
         return dto;
     }

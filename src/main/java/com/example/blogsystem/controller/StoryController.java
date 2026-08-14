@@ -51,6 +51,26 @@ public class StoryController {
         return ResponseEntity.ok(dtos);
     }
 
+    // Lấy kho lưu trữ tin của chính mình hoặc user chỉ định: GET /stories/archive
+    @GetMapping("/archive")
+    public ResponseEntity<List<StoryDTO>> getMyArchivedStories() {
+        List<Story> stories = storyService.getUserArchivedStories(currentUser.id());
+        List<StoryDTO> dtos = stories.stream()
+                .map(DTOMapper::toStoryDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
+    @GetMapping("/archive/{userId}")
+    public ResponseEntity<List<StoryDTO>> getUserArchivedStories(@PathVariable Long userId) {
+        currentUser.requireOwnerOrAdmin(userId);
+        List<Story> stories = storyService.getUserArchivedStories(userId);
+        List<StoryDTO> dtos = stories.stream()
+                .map(DTOMapper::toStoryDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
     // Xóa Story: DELETE /stories/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteStory(@PathVariable Long id) {

@@ -16,4 +16,6 @@ public class StoryDTO {
     private String textContent;
     private String bgColor;
     private LocalDateTime createdAt;
+    private LocalDateTime expiresAt;
+    private Boolean isArchived;
 }
