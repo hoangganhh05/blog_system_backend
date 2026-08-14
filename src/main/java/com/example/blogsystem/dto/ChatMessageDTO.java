@@ -15,5 +15,6 @@ public class ChatMessageDTO {
     private UserPublicDTO receiver;
     private String content;
     private boolean isRead;
+    private LocalDateTime readAt;
     private LocalDateTime createdAt;
 }

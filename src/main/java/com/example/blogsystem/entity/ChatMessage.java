@@ -36,6 +36,9 @@ public class ChatMessage {
     @Column(name = "is_read")
     private boolean isRead = false;
 
+    @Column(name = "read_at")
+    private LocalDateTime readAt;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 }

@@ -68,8 +68,10 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     public void markAsRead(Long senderId, Long receiverId) {
         List<ChatMessage> unread = chatMessageRepository.findBySenderIdAndReceiverIdAndIsReadFalse(senderId, receiverId);
         if (!unread.isEmpty()) {
+            LocalDateTime now = LocalDateTime.now();
             for (ChatMessage msg : unread) {
                 msg.setRead(true);
+                msg.setReadAt(now);
             }
             chatMessageRepository.saveAll(unread);
         }

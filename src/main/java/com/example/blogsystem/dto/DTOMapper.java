@@ -162,6 +162,7 @@ public class DTOMapper {
         dto.setReceiver(toUserPublicDTO(message.getReceiver()));
         dto.setContent(message.getContent());
         dto.setRead(message.isRead());
+        dto.setReadAt(message.getReadAt());
         dto.setCreatedAt(message.getCreatedAt());
 
         return dto;
