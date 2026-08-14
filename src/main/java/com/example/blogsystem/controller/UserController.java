@@ -24,15 +24,31 @@ public class UserController {
     }
 
     @GetMapping
-    public List<UserPublicDTO> getUsers() {
-        return userService.getAllUsers().stream()
-                .map(this::toPublicDto)
-                .collect(Collectors.toList());
+    public org.springframework.data.domain.Page<UserPublicDTO> getUsers(
+            @RequestParam(value = "query", required = false) String query,
+            @RequestParam(value = "q", required = false) String q,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size) {
+        String searchKeyword = (query != null && !query.isBlank()) ? query : q;
+        int pageSize = Math.min(Math.max(size, 1), 50);
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(Math.max(page, 0), pageSize);
+
+        return userService.searchUsers(searchKeyword, pageable)
+                .map(com.example.blogsystem.dto.DTOMapper::toUserPublicDTO);
+    }
+
+    @GetMapping("/search")
+    public org.springframework.data.domain.Page<UserPublicDTO> searchUsers(
+            @RequestParam(value = "q", required = false) String q,
+            @RequestParam(value = "query", required = false) String query,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size) {
+        return getUsers(query, q, page, size);
     }
 
     @GetMapping("/{id}")
     public UserPublicDTO getUserById(@PathVariable Long id) {
-        return toPublicDto(userService.getUserById(id));
+        return com.example.blogsystem.dto.DTOMapper.toUserPublicDTO(userService.getUserById(id));
     }
 
     @PostMapping
@@ -77,22 +93,6 @@ public class UserController {
         currentUser.requireOwnerOrAdmin(id);
         Map<String, Object> stats = userService.getUserStats(id);
         return ResponseEntity.ok(stats);
-    }
-
-    private UserPublicDTO toPublicDto(User user) {
-        if (user == null) return null;
-        return new UserPublicDTO(
-                user.getId(),
-                user.getUsername(),
-                user.getFullName(),
-                user.getBio(),
-                user.getAvatarColor(),
-                user.getAvatarUrl(),
-                user.getBannerUrl(),
-                user.getEmailPrivacy(),
-                user.getRole(),
-                user.getCreatedAt()
-        );
     }
 }
 

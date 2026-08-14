@@ -34,6 +34,15 @@ public class UserImpl implements UserService {
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
+
+    @Override
+    public org.springframework.data.domain.Page<User> searchUsers(String query, org.springframework.data.domain.Pageable pageable) {
+        if (query == null || query.trim().isEmpty()) {
+            return userRepository.findAll(pageable);
+        }
+        String trimmed = query.trim();
+        return userRepository.findByUsernameContainingIgnoreCaseOrFullNameContainingIgnoreCase(trimmed, trimmed, pageable);
+    }
     @Override
     public User getUserById(Long id) {
         return userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));

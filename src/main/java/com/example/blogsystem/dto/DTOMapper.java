@@ -49,9 +49,6 @@ public class DTOMapper {
         dto.setAvatarColor(user.getAvatarColor());
         dto.setAvatarUrl(user.getAvatarUrl());
         dto.setBannerUrl(user.getBannerUrl());
-        dto.setEmailPrivacy(user.getEmailPrivacy());
-        dto.setRole(user.getRole());
-        dto.setCreatedAt(user.getCreatedAt());
         
         return dto;
     }
