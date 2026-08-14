@@ -63,22 +63,22 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         // Public Auth endpoints
-                        .requestMatchers("/auth/**", "/api/auth/**", "/api/v1/auth/**").permitAll()
+                        .requestMatchers("/auth/**", "/api/auth/**", "/v1/auth/**", "/api/v1/auth/**").permitAll()
 
                         // File Upload static resources
-                        .requestMatchers(HttpMethod.GET, "/uploads/**", "/api/uploads/**", "/api/v1/uploads/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/uploads/**", "/api/uploads/**", "/v1/uploads/**", "/api/v1/uploads/**").permitAll()
 
                         // Public GET endpoints
-                        .requestMatchers(HttpMethod.GET, "/posts/**", "/api/posts/**", "/api/v1/posts/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/comments/**", "/api/comments/**", "/api/v1/comments/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/categories/**", "/api/categories/**", "/api/v1/categories/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/stories/**", "/api/stories/**", "/api/v1/stories/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/users/**", "/api/users/**", "/api/v1/users/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/games/caro/**", "/api/games/caro/**", "/api/v1/games/caro/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/posts/**", "/api/posts/**", "/v1/posts/**", "/api/v1/posts/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/comments/**", "/api/comments/**", "/v1/comments/**", "/api/v1/comments/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/categories/**", "/api/categories/**", "/v1/categories/**", "/api/v1/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/stories/**", "/api/stories/**", "/v1/stories/**", "/api/v1/stories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/users/**", "/api/users/**", "/v1/users/**", "/api/v1/users/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/games/caro/**", "/api/games/caro/**", "/v1/games/caro/**", "/api/v1/games/caro/**").permitAll()
 
                         // Public view counters
-                        .requestMatchers(HttpMethod.POST, "/posts/*/view", "/api/posts/*/view", "/api/v1/posts/*/view").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/stories/*/view", "/api/stories/*/view", "/api/v1/stories/*/view").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/posts/*/view", "/api/posts/*/view", "/v1/posts/*/view", "/api/v1/posts/*/view").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/stories/*/view", "/api/stories/*/view", "/v1/stories/*/view", "/api/v1/stories/*/view").permitAll()
 
                         // Yêu cầu xác thực với tất cả các endpoint khác (bao gồm cả Swagger/Actuator/H2-console nếu bật)
                         .anyRequest().authenticated()

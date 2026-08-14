@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping({"/chat", "/api/v1/chat"})
+@RequestMapping({"/chat", "/api/chat", "/v1/chat", "/api/v1/chat"})
 @Slf4j
 public class ChatController {
 

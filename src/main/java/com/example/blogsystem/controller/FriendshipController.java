@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping({"/friends", "/api/v1/friends"})
+@RequestMapping({"/friends", "/api/friends", "/v1/friends", "/api/v1/friends"})
 public class FriendshipController {
 
     private final FriendshipService friendshipService;

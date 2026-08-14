@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.security.SecureRandom;
 
 @RestController
-@RequestMapping({"/auth", "/api/v1/auth"})
+@RequestMapping({"/auth", "/api/auth", "/v1/auth", "/api/v1/auth"})
 public class AuthController {
     private final UserService userService;
     private final UserRepository userRepository;

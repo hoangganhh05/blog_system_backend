@@ -28,20 +28,20 @@ public class JwtFilter extends OncePerRequestFilter {
         if ("OPTIONS".equalsIgnoreCase(method)) {
             return true;
         }
-        if (path.startsWith("/auth/") || path.startsWith("/api/auth/")) {
+        if (path.startsWith("/auth/") || path.startsWith("/api/auth/") || path.startsWith("/v1/auth/") || path.startsWith("/api/v1/auth/")) {
             return true;
         }
         if ((path.contains("/posts/") && path.endsWith("/view")) || (path.contains("/stories/") && path.endsWith("/view"))) {
             return true;
         }
         if ("GET".equalsIgnoreCase(method)) {
-            if (path.startsWith("/uploads/") || path.startsWith("/api/uploads/") ||
-                path.startsWith("/posts") || path.startsWith("/api/posts") ||
-                path.startsWith("/comments") || path.startsWith("/api/comments") ||
-                path.startsWith("/categories") || path.startsWith("/api/categories") ||
-                path.startsWith("/stories") || path.startsWith("/api/stories") ||
-                path.startsWith("/users") || path.startsWith("/api/users") ||
-                path.startsWith("/games/caro") || path.startsWith("/api/games/caro")) {
+            if (path.startsWith("/uploads/") || path.startsWith("/api/uploads/") || path.startsWith("/v1/uploads/") || path.startsWith("/api/v1/uploads/") ||
+                path.startsWith("/posts") || path.startsWith("/api/posts") || path.startsWith("/v1/posts") || path.startsWith("/api/v1/posts") ||
+                path.startsWith("/comments") || path.startsWith("/api/comments") || path.startsWith("/v1/comments") || path.startsWith("/api/v1/comments") ||
+                path.startsWith("/categories") || path.startsWith("/api/categories") || path.startsWith("/v1/categories") || path.startsWith("/api/v1/categories") ||
+                path.startsWith("/stories") || path.startsWith("/api/stories") || path.startsWith("/v1/stories") || path.startsWith("/api/v1/stories") ||
+                path.startsWith("/users") || path.startsWith("/api/users") || path.startsWith("/v1/users") || path.startsWith("/api/v1/users") ||
+                path.startsWith("/games/caro") || path.startsWith("/api/games/caro") || path.startsWith("/v1/games/caro") || path.startsWith("/api/v1/games/caro")) {
                 return true;
             }
         }

@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping({"/categories", "/api/v1/categories"})
+@RequestMapping({"/categories", "/api/categories", "/v1/categories", "/api/v1/categories"})
 public class CategoryController {
 
     private final CategoryService categoryService;
