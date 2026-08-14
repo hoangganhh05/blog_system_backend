@@ -59,12 +59,28 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
+                        // Cho phép Preflight OPTIONS request từ CORS
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // Public Auth endpoints
                         .requestMatchers("/auth/**", "/api/auth/**").permitAll()
+
+                        // File Upload static resources
+                        .requestMatchers(HttpMethod.GET, "/uploads/**", "/api/uploads/**").permitAll()
+
+                        // Public GET endpoints
                         .requestMatchers(HttpMethod.GET, "/posts/**", "/api/posts/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/comments/**", "/api/comments/**", "/comments", "/api/comments").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/comments/**", "/api/comments/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/categories/**", "/api/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/stories/**", "/api/stories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/users/**", "/api/users/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/games/caro/**", "/api/games/caro/**").permitAll()
+
+                        // Public view counters
                         .requestMatchers(HttpMethod.POST, "/posts/*/view", "/api/posts/*/view").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/stories/*/view", "/api/stories/*/view").permitAll()
+
+                        // Yêu cầu xác thực với tất cả các endpoint khác (bao gồm cả Swagger/Actuator/H2-console nếu bật)
                         .anyRequest().authenticated()
                 )
 

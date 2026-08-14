@@ -1,34 +1,40 @@
 package com.example.blogsystem.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
 public class CorsConfig {
 
-    @Value("${app.cors.allowed-origins:https://anhhoangg.id.vn,http://localhost:3000,http://localhost:5173}")
+    @Value("${app.cors.allowed-origins:https://anhhoangg.id.vn,http://localhost:3000,http://localhost:5173,http://localhost:5174}")
     private String allowedOrigins;
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // Explicit origins are required when credentials are allowed.
-        config.setAllowedOrigins(List.of(allowedOrigins.split(",")).stream().map(String::trim).toList());
+        List<String> origins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
 
-        // Cho phép tất cả phương thức HTTP (bao gồm OPTIONS preflight)
+        // Explicit origins are required when credentials are allowed.
+        config.setAllowedOrigins(origins);
+
+        // Cho phép các phương thức HTTP cần thiết
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
 
-        // Cho phép tất cả Headers
-        config.setAllowedHeaders(List.of("*"));
+        // Cho phép các Headers được phép truyền lên
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
 
-        // Cho phép credentials
+        // Cho phép credentials (cookie, JWT headers)
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 
