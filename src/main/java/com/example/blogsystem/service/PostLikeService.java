@@ -1,8 +1,7 @@
 package com.example.blogsystem.service;
 
-import java.util.Map;
-
 import java.util.List;
+import java.util.Map;
 
 public interface PostLikeService {
     boolean toggleLike(Long userId, Long postId);

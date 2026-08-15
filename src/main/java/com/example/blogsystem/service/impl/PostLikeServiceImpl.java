@@ -40,77 +40,49 @@ public class PostLikeServiceImpl implements PostLikeService {
 
     @Override
     public Map<String, Object> toggleReaction(Long userId, Long postId, String reactionType) {
-        if (reactionType == null || reactionType.isBlank()) {
-            reactionType = "LIKE";
-        }
-        reactionType = reactionType.toUpperCase();
-
         Optional<PostLike> existing = postLikeRepository.findByUserIdAndPostId(userId, postId);
         boolean liked = false;
-        String userReaction = null;
 
         if (existing.isPresent()) {
-            PostLike postLike = existing.get();
-            if (reactionType.equals(postLike.getType())) {
-                // Thả cùng loại cảm xúc -> Hủy cảm xúc (Unlike)
-                postLikeRepository.delete(postLike);
-                liked = false;
-                userReaction = null;
-            } else {
-                // Đổi loại cảm xúc (ví dụ từ LIKE sang LOVE)
-                postLike.setType(reactionType);
-                postLikeRepository.save(postLike);
-                liked = true;
-                userReaction = reactionType;
-            }
+            // Hủy thả tim (Unlike)
+            postLikeRepository.delete(existing.get());
+            liked = false;
         } else {
-            // Chưa tương tác -> Tạo mới cảm xúc
+            // Thả tim mới (Like / Heart)
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
             Post post = postRepository.findById(postId)
                     .orElseThrow(() -> new RuntimeException("Post not found"));
 
-            PostLike postLike = new PostLike();
-            postLike.setUser(user);
-            postLike.setPost(post);
-            postLike.setType(reactionType);
-            postLike.setCreatedAt(LocalDateTime.now());
+            PostLike postLike = PostLike.builder()
+                    .user(user)
+                    .post(post)
+                    .createdAt(LocalDateTime.now())
+                    .build();
             postLikeRepository.save(postLike);
 
             liked = true;
-            userReaction = reactionType;
 
             // Gửi thông báo cho tác giả bài viết
             User author = post.getUser();
             if (author != null && user != null && !author.getId().equals(user.getId())) {
                 String senderName = user.getFullName() != null ? user.getFullName() : user.getUsername();
-                String reactionLabel = getReactionLabel(reactionType);
                 notificationService.createNotification(
                     author,
                     user,
                     post,
-                    senderName + " đã " + reactionLabel + " bài viết của bạn: \"" + post.getTitle() + "\""
+                    senderName + " đã thả tim bài viết của bạn: \"" + post.getTitle() + "\""
                 );
             }
         }
 
-        Map<String, Object> res = new java.util.HashMap<>();
+        long count = getLikeCount(postId);
+        Map<String, Object> res = new HashMap<>();
         res.put("liked", liked);
-        res.put("userReaction", userReaction);
-        res.put("count", getLikeCount(postId));
-        res.put("reactionsSummary", getReactionsSummary(postId));
+        res.put("userReaction", liked ? "LIKE" : null);
+        res.put("count", count);
+        res.put("reactionsSummary", Map.of("LIKE", count));
         return res;
-    }
-
-    private String getReactionLabel(String type) {
-        switch (type) {
-            case "LOVE": return "bày tỏ cảm xúc Yêu thích với";
-            case "HAHA": return "bày tỏ cảm xúc Haha với";
-            case "WOW": return "bày tỏ cảm xúc Wow với";
-            case "SAD": return "bày tỏ cảm xúc Buồn với";
-            case "ANGRY": return "bày tỏ cảm xúc Phẫn nộ với";
-            default: return "thích";
-        }
     }
 
     @Override
@@ -127,20 +99,13 @@ public class PostLikeServiceImpl implements PostLikeService {
     @Override
     public String getUserReaction(Long userId, Long postId) {
         if (userId == null) return null;
-        return postLikeRepository.findByUserIdAndPostId(userId, postId)
-                .map(PostLike::getType)
-                .orElse(null);
+        return postLikeRepository.existsByUserIdAndPostId(userId, postId) ? "LIKE" : null;
     }
 
     @Override
-    public java.util.Map<String, Long> getReactionsSummary(Long postId) {
-        java.util.List<PostLike> likes = postLikeRepository.findByPostId(postId);
-        java.util.Map<String, Long> summary = new java.util.HashMap<>();
-        for (PostLike l : likes) {
-            String type = l.getType() != null ? l.getType() : "LIKE";
-            summary.put(type, summary.getOrDefault(type, 0L) + 1);
-        }
-        return summary;
+    public Map<String, Long> getReactionsSummary(Long postId) {
+        long count = getLikeCount(postId);
+        return Map.of("LIKE", count);
     }
 
     @Override
@@ -151,7 +116,8 @@ public class PostLikeServiceImpl implements PostLikeService {
         for (PostLike like : likes) {
             Map<String, Object> item = new HashMap<>();
             item.put("id", like.getId());
-            item.put("type", like.getType() != null ? like.getType() : "LIKE");
+            item.put("type", "LIKE");
+            item.put("createdAt", like.getCreatedAt());
 
             User user = like.getUser();
             if (user != null) {
