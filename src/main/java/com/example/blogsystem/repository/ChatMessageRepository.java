@@ -15,6 +15,10 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     @Query("SELECT m FROM ChatMessage m WHERE (m.sender.id = :u1 AND m.receiver.id = :u2) OR (m.sender.id = :u2 AND m.receiver.id = :u1) ORDER BY m.createdAt ASC")
     List<ChatMessage> findChatHistory(@Param("u1") Long u1, @Param("u2") Long u2);
 
+    // Kiểm tra xem 2 người dùng đã từng có lịch sử nhắn tin cho nhau chưa
+    @Query("SELECT CASE WHEN COUNT(m) > 0 THEN true ELSE false END FROM ChatMessage m WHERE (m.sender.id = :u1 AND m.receiver.id = :u2) OR (m.sender.id = :u2 AND m.receiver.id = :u1)")
+    boolean existsBetweenUsers(@Param("u1") Long u1, @Param("u2") Long u2);
+
     // Đếm số tin nhắn chưa đọc từ 1 người gửi đến 1 người nhận
     long countBySenderIdAndReceiverIdAndIsReadFalse(Long senderId, Long receiverId);
 

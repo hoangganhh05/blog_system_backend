@@ -18,11 +18,16 @@ public class UserController {
 
     private final UserService userService;
     private final com.example.blogsystem.repository.UserRepository userRepository;
+    private final com.example.blogsystem.repository.ChatMessageRepository chatMessageRepository;
     private final CurrentUser currentUser;
 
-    public UserController(UserService userService, com.example.blogsystem.repository.UserRepository userRepository, CurrentUser currentUser) {
+    public UserController(UserService userService,
+                          com.example.blogsystem.repository.UserRepository userRepository,
+                          com.example.blogsystem.repository.ChatMessageRepository chatMessageRepository,
+                          CurrentUser currentUser) {
         this.userService = userService;
         this.userRepository = userRepository;
+        this.chatMessageRepository = chatMessageRepository;
         this.currentUser = currentUser;
     }
 
@@ -36,8 +41,17 @@ public class UserController {
         int pageSize = Math.min(Math.max(size, 1), 50);
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(Math.max(page, 0), pageSize);
 
+        Long myId = null;
+        try {
+            myId = currentUser.id();
+        } catch (Exception ignored) {}
+        final Long currentId = myId;
+
         return userService.searchUsers(searchKeyword, pageable)
-                .map(DTOMapper::toUserPublicDTO);
+                .map(u -> {
+                    boolean hasMessaged = currentId != null && (currentId.equals(u.getId()) || chatMessageRepository.existsBetweenUsers(currentId, u.getId()));
+                    return DTOMapper.toUserPublicDTO(u, hasMessaged);
+                });
     }
 
     @GetMapping("/search")
@@ -59,12 +73,18 @@ public class UserController {
     @GetMapping("/{id}")
     public Object getUserById(@PathVariable Long id) {
         User user = userService.getUserById(id);
-        if (currentUser.id() != null && currentUser.id().equals(id)) {
+        Long myId = null;
+        try {
+            myId = currentUser.id();
+        } catch (Exception ignored) {}
+
+        if (myId != null && myId.equals(id)) {
             // Chính chủ gọi API của mình: Trả về UserProfileDTO
             return DTOMapper.toUserProfileDTO(user);
         }
-        // Người khác xem profile: Trả về UserPublicDTO không chứa email/nhạy cảm
-        return DTOMapper.toUserPublicDTO(user);
+        // Người khác xem profile: Kiểm tra xem đã từng nhắn tin chưa
+        boolean hasMessaged = myId != null && chatMessageRepository.existsBetweenUsers(myId, id);
+        return DTOMapper.toUserPublicDTO(user, hasMessaged);
     }
 
     @PostMapping

@@ -44,6 +44,10 @@ public class DTOMapper {
     }
 
     public static UserPublicDTO toUserPublicDTO(User user) {
+        return toUserPublicDTO(user, true);
+    }
+
+    public static UserPublicDTO toUserPublicDTO(User user, boolean hasMessaged) {
         if (user == null) return null;
 
         UserPublicDTO dto = new UserPublicDTO();
@@ -55,7 +59,7 @@ public class DTOMapper {
         dto.setAvatarUrl(user.getAvatarUrl());
         dto.setBannerUrl(user.getBannerUrl());
 
-        boolean showStatus = !Boolean.FALSE.equals(user.getShowActiveStatus());
+        boolean showStatus = !Boolean.FALSE.equals(user.getShowActiveStatus()) && hasMessaged;
         boolean isRecentActive = showStatus && (Boolean.TRUE.equals(user.getIsOnline()) ||
                 (user.getLastActiveAt() != null && user.getLastActiveAt().isAfter(java.time.LocalDateTime.now().minusMinutes(3))));
         dto.setIsOnline(isRecentActive);
