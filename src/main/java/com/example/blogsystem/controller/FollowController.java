@@ -18,10 +18,12 @@ import java.util.stream.Collectors;
 public class FollowController {
 
     private final FollowService followService;
+    private final com.example.blogsystem.repository.UserRepository userRepository;
     private final CurrentUser currentUser;
 
-    public FollowController(FollowService followService, CurrentUser currentUser) {
+    public FollowController(FollowService followService, com.example.blogsystem.repository.UserRepository userRepository, CurrentUser currentUser) {
         this.followService = followService;
+        this.userRepository = userRepository;
         this.currentUser = currentUser;
     }
 
@@ -68,8 +70,18 @@ public class FollowController {
 
     // Lấy danh sách những người user đang theo dõi: GET /follows/following hoặc GET /follows/following/{userId}
     @GetMapping({"/following", "/following/{userId}"})
-    public ResponseEntity<List<UserPublicDTO>> getFollowing(@PathVariable(required = false) Long userId) {
+    public ResponseEntity<?> getFollowing(@PathVariable(required = false) Long userId) {
         Long target = (userId != null) ? userId : currentUser.id();
+        if (userId != null && !currentUser.id().equals(userId)) {
+            User targetUser = userRepository.findById(userId).orElse(null);
+            if (targetUser != null && Boolean.FALSE.equals(targetUser.getShowFollowingList())) {
+                Map<String, Object> res = new HashMap<>();
+                res.put("isPrivate", true);
+                res.put("message", "Người dùng này đã ẩn danh sách đang theo dõi.");
+                res.put("following", List.of());
+                return ResponseEntity.ok(res);
+            }
+        }
         List<User> followingList = followService.getFollowing(target);
         List<UserPublicDTO> dtos = followingList.stream()
                 .map(DTOMapper::toUserPublicDTO)
@@ -87,8 +99,18 @@ public class FollowController {
 
     // Lấy danh sách người theo dõi user: GET /follows/followers hoặc GET /follows/followers/{userId}
     @GetMapping({"/followers", "/followers/{userId}"})
-    public ResponseEntity<List<UserPublicDTO>> getFollowers(@PathVariable(required = false) Long userId) {
+    public ResponseEntity<?> getFollowers(@PathVariable(required = false) Long userId) {
         Long target = (userId != null) ? userId : currentUser.id();
+        if (userId != null && !currentUser.id().equals(userId)) {
+            User targetUser = userRepository.findById(userId).orElse(null);
+            if (targetUser != null && Boolean.FALSE.equals(targetUser.getShowFollowingList())) {
+                Map<String, Object> res = new HashMap<>();
+                res.put("isPrivate", true);
+                res.put("message", "Người dùng này đã ẩn danh sách người theo dõi.");
+                res.put("followers", List.of());
+                return ResponseEntity.ok(res);
+            }
+        }
         List<User> followersList = followService.getFollowers(target);
         List<UserPublicDTO> dtos = followersList.stream()
                 .map(DTOMapper::toUserPublicDTO)
