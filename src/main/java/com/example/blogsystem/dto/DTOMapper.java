@@ -125,7 +125,7 @@ public class DTOMapper {
 
         UserReactionDTO dto = new UserReactionDTO();
         dto.setId(postLike.getId());
-        dto.setType(postLike.getType() != null ? postLike.getType() : "LIKE");
+        dto.setType("LIKE");
 
         if (postLike.getUser() != null) {
             dto.setUserId(postLike.getUser().getId());
