@@ -22,7 +22,9 @@ public class AiController {
     public ResponseEntity<AiResponse> chatWithAi(@RequestBody AiRequest request) {
         try {
             String prompt = request != null ? request.getPrompt() : "";
-            String reply = aiService.generateReply(prompt);
+            String imageBase64 = request != null ? request.getImageBase64() : null;
+            String imageMimeType = request != null ? request.getImageMimeType() : null;
+            String reply = aiService.generateReply(prompt, imageBase64, imageMimeType);
             return ResponseEntity.ok(new AiResponse(reply));
         } catch (Exception e) {
             log.error("Lỗi khi xử lý chat AI: ", e);

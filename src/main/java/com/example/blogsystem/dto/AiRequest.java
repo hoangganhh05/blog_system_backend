@@ -9,4 +9,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AiRequest {
     private String prompt;
+    private String imageBase64;
+    private String imageMimeType;
+
+    public AiRequest(String prompt) {
+        this.prompt = prompt;
+    }
 }

@@ -30,9 +30,16 @@ public class AiServiceImpl implements AiService {
 
     @Override
     public String generateReply(String prompt) {
-        if (prompt == null || prompt.trim().isEmpty()) {
+        return generateReply(prompt, null, null);
+    }
+
+    @Override
+    public String generateReply(String prompt, String imageBase64, String imageMimeType) {
+        if ((prompt == null || prompt.trim().isEmpty()) && (imageBase64 == null || imageBase64.trim().isEmpty())) {
             return "Xin chào! Mình có thể giúp gì cho bạn trên BlogViet hôm nay?";
         }
+
+        String actualPrompt = prompt != null && !prompt.trim().isEmpty() ? prompt.trim() : "Hãy phân tích hình ảnh này giúp tôi.";
 
         String apiKey = rawApiKey != null ? rawApiKey.trim().replace("\"", "").replace("'", "") : "";
         String modelName = "gemini-3.7-flash";
@@ -50,7 +57,7 @@ public class AiServiceImpl implements AiService {
 
         String systemPrompt = """
                 Bạn là Trợ lý AI thông minh, thân thiện của mạng xã hội BlogViet (https://anhhoangg.id.vn/).
-                Sứ mệnh: Hướng dẫn người dùng trải nghiệm nền tảng, hỗ trợ sáng tạo nội dung, gợi ý ý tưởng và giải đáp thắc mắc về cách sử dụng mạng xã hội BlogViet.
+                Sứ mệnh: Hướng dẫn người dùng trải nghiệm nền tảng, hỗ trợ sáng tạo nội dung, giải đáp thắc mắc, phân tích hình ảnh đính kèm (ảnh chụp màn hình lỗi, ảnh bài viết, tác phẩm nghệ thuật, meme...) về cách sử dụng mạng xã hội BlogViet.
 
                 QUY TẮC CỐT LÕI (TUYỆT ĐỐI TUÂN THỦ):
                 1. TUYỆT ĐỐI KHÔNG NHẮC ĐẾN CÔNG NGHỆ: 
@@ -93,7 +100,31 @@ public class AiServiceImpl implements AiService {
                   - Tóm tắt AI (nút ✨ ở góc bài viết): Tự động tóm tắt ý chính của bài viết dài chỉ trong vài giây.
                 """;
 
-        String combinedPrompt = systemPrompt.trim() + "\n\n---\nNội dung câu hỏi của người dùng:\n" + prompt.trim();
+        String combinedPrompt = systemPrompt.trim() + "\n\n---\nNội dung câu hỏi của người dùng:\n" + actualPrompt;
+
+        // Xử lý Multimodal Image Parts nếu có
+        List<Map<String, Object>> partsList = new ArrayList<>();
+        partsList.add(Collections.singletonMap("text", combinedPrompt));
+
+        if (imageBase64 != null && !imageBase64.trim().isEmpty()) {
+            String rawB64 = imageBase64.trim();
+            String mime = imageMimeType != null && !imageMimeType.trim().isEmpty() ? imageMimeType.trim() : "image/jpeg";
+            if (rawB64.contains(";base64,")) {
+                String[] split = rawB64.split(";base64,");
+                if (split[0].contains("data:")) {
+                    mime = split[0].replace("data:", "").trim();
+                }
+                rawB64 = split[1].trim();
+            }
+
+            Map<String, Object> inlineData = new HashMap<>();
+            inlineData.put("mime_type", mime);
+            inlineData.put("data", rawB64);
+
+            Map<String, Object> imagePart = new HashMap<>();
+            imagePart.put("inline_data", inlineData);
+            partsList.add(imagePart);
+        }
 
         // Danh sách URL ưu tiên: Model thế hệ mới nhất (Gemini 3.7 Flash → 3.6 Flash → 2.5 Flash fallback)
         List<String> targetUrls = Arrays.asList(
@@ -118,7 +149,7 @@ public class AiServiceImpl implements AiService {
                 // Body chuẩn Google REST API v1/v1beta
                 Map<String, Object> body = new HashMap<>();
                 Map<String, Object> contentMap = new HashMap<>();
-                contentMap.put("parts", Collections.singletonList(Collections.singletonMap("text", combinedPrompt)));
+                contentMap.put("parts", partsList);
                 body.put("contents", Collections.singletonList(contentMap));
 
                 HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
