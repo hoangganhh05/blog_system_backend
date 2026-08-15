@@ -42,9 +42,9 @@ public class EncryptionFilter extends OncePerRequestFilter {
             "/actuator"
     );
 
-    public EncryptionFilter(CryptoUtil cryptoUtil, ObjectMapper objectMapper) {
+    public EncryptionFilter(CryptoUtil cryptoUtil, @org.springframework.beans.factory.annotation.Autowired(required = false) ObjectMapper objectMapper) {
         this.cryptoUtil = cryptoUtil;
-        this.objectMapper = objectMapper;
+        this.objectMapper = (objectMapper != null) ? objectMapper : new ObjectMapper();
     }
 
     @Override

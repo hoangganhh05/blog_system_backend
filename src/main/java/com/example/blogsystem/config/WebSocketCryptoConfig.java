@@ -24,9 +24,9 @@ public class WebSocketCryptoConfig implements WebSocketConfigurer {
     private final CryptoUtil cryptoUtil;
     private final ObjectMapper objectMapper;
 
-    public WebSocketCryptoConfig(CryptoUtil cryptoUtil, ObjectMapper objectMapper) {
+    public WebSocketCryptoConfig(CryptoUtil cryptoUtil, @org.springframework.beans.factory.annotation.Autowired(required = false) ObjectMapper objectMapper) {
         this.cryptoUtil = cryptoUtil;
-        this.objectMapper = objectMapper;
+        this.objectMapper = (objectMapper != null) ? objectMapper : new ObjectMapper();
     }
 
     @Override
