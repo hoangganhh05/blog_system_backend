@@ -59,8 +59,6 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
     @Override
     public List<ChatMessage> getChatHistory(Long user1, Long user2) {
-        // Tự động đánh dấu đã đọc các tin nhắn gửi tới user1 từ user2
-        markAsRead(user2, user1);
         return chatMessageRepository.findChatHistory(user1, user2);
     }
 
