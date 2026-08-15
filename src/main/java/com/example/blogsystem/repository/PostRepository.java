@@ -15,6 +15,7 @@ import java.util.Optional;
 public interface PostRepository extends JpaRepository<Post, Long> {
     Page<Post> findByCategoryId(Long categoryId, Pageable pageable);
     List<Post> findByUserId(Long userId);
+    List<Post> findBySharedPostId(Long sharedPostId);
     Page<Post> findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(String title, String content, Pageable pageable);
 
     @Query("SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.user LEFT JOIN FETCH p.category LEFT JOIN FETCH p.sharedPost WHERE p.id = :id")

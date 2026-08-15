@@ -13,7 +13,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping({"/posts", "/api/posts", "/v1/posts", "/api/v1/posts"})
@@ -69,13 +74,20 @@ public class PostController {
         }
     }
     @PutMapping("/{id}")
-    public PostDTO updatePost(@PathVariable Long id, @RequestBody Post post) {
-        currentUser.requireOwnerOrAdmin(postRepository.findById(id).orElseThrow().getUser().getId());
-        return DTOMapper.toPostDTO(postService.updatePost(id, post));
+    public ResponseEntity<PostDTO> updatePost(@PathVariable Long id, @RequestBody Post post) {
+        Post existing = postRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bài viết ID: " + id));
+        currentUser.requireOwnerOrAdmin(existing.getUser().getId());
+        Post updated = postService.updatePost(id, post);
+        return ResponseEntity.ok(DTOMapper.toPostDTO(updated));
     }
+
     @DeleteMapping("/{id}")
-    public void deletePost(@PathVariable Long id) {
-        currentUser.requireOwnerOrAdmin(postRepository.findById(id).orElseThrow().getUser().getId());
+    public ResponseEntity<Map<String, Object>> deletePost(@PathVariable Long id) {
+        Post existing = postRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bài viết ID: " + id));
+        currentUser.requireOwnerOrAdmin(existing.getUser().getId());
         postService.deletePost(id);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Đã xóa bài viết thành công", "deletedId", id));
     }
 }

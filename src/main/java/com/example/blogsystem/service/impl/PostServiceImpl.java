@@ -149,9 +149,9 @@ public class PostServiceImpl implements PostService {
     @Transactional
     public void deletePost(Long id) {
         Post post = postRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy bài viết với id: " + id));
         
-        // Dọn dẹp các ràng buộc khóa ngoại trước khi xóa post
+        // 1. Dọn dẹp các ràng buộc khóa ngoại trước khi xóa post
         try {
             notificationRepository.deleteByPostId(id);
         } catch (Exception e) {
@@ -173,7 +173,21 @@ public class PostServiceImpl implements PostService {
             log.warn("Không thể xóa comments cho post: {}", id, e);
         }
 
+        // 2. Gỡ liên kết bài viết được chia sẻ nếu có bài viết khác đang trỏ tới bài này
+        try {
+            List<Post> reposts = postRepository.findBySharedPostId(id);
+            if (reposts != null && !reposts.isEmpty()) {
+                for (Post repost : reposts) {
+                    repost.setSharedPost(null);
+                    postRepository.save(repost);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Không thể gỡ liên kết reposts cho post: {}", id, e);
+        }
+
         postRepository.delete(post);
+        log.info("✅ Đã xóa thành công bài viết ID: {}", id);
     }
 
     @Override
