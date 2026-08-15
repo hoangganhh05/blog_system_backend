@@ -74,7 +74,10 @@ public class FollowController {
         Long target = (userId != null) ? userId : currentUser.id();
         if (userId != null && !currentUser.id().equals(userId)) {
             User targetUser = userRepository.findById(userId).orElse(null);
-            if (targetUser != null && Boolean.FALSE.equals(targetUser.getShowFollowingList())) {
+            if (targetUser != null && (
+                    "PRIVATE".equalsIgnoreCase(targetUser.getFollowerListPrivacy()) ||
+                    Boolean.FALSE.equals(targetUser.getShowFollowingList())
+            )) {
                 Map<String, Object> res = new HashMap<>();
                 res.put("isPrivate", true);
                 res.put("message", "Người dùng này đã ẩn danh sách đang theo dõi.");
@@ -103,7 +106,10 @@ public class FollowController {
         Long target = (userId != null) ? userId : currentUser.id();
         if (userId != null && !currentUser.id().equals(userId)) {
             User targetUser = userRepository.findById(userId).orElse(null);
-            if (targetUser != null && Boolean.FALSE.equals(targetUser.getShowFollowingList())) {
+            if (targetUser != null && (
+                    "PRIVATE".equalsIgnoreCase(targetUser.getFollowerListPrivacy()) ||
+                    Boolean.FALSE.equals(targetUser.getShowFollowingList())
+            )) {
                 Map<String, Object> res = new HashMap<>();
                 res.put("isPrivate", true);
                 res.put("message", "Người dùng này đã ẩn danh sách người theo dõi.");

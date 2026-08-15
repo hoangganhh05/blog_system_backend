@@ -22,4 +22,7 @@ public class UserProfileDTO {
     private String messageScope;
     private Boolean showActiveStatus;
     private Boolean showFollowingList;
+    private Boolean showFriendsList;
+    private String friendListPrivacy;
+    private String followerListPrivacy;
 }

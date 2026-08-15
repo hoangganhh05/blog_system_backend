@@ -95,7 +95,10 @@ public class FriendshipController {
         // Kiểm tra quyền riêng tư nếu xem danh sách của người khác
         if (userId != null && !currentUser.id().equals(userId)) {
             User targetUser = userRepository.findById(userId).orElse(null);
-            if (targetUser != null && Boolean.FALSE.equals(targetUser.getShowFriendsList())) {
+            if (targetUser != null && (
+                    "PRIVATE".equalsIgnoreCase(targetUser.getFriendListPrivacy()) ||
+                    Boolean.FALSE.equals(targetUser.getShowFriendsList())
+            )) {
                 Map<String, Object> res = new HashMap<>();
                 res.put("isPrivate", true);
                 res.put("message", "Người dùng này đã ẩn danh sách bạn bè.");

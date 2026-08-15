@@ -71,6 +71,9 @@ public class UserImpl implements UserService {
         if (user.getMessageScope() != null) existingUser.setMessageScope(user.getMessageScope());
         if (user.getShowActiveStatus() != null) existingUser.setShowActiveStatus(user.getShowActiveStatus());
         if (user.getShowFollowingList() != null) existingUser.setShowFollowingList(user.getShowFollowingList());
+        if (user.getShowFriendsList() != null) existingUser.setShowFriendsList(user.getShowFriendsList());
+        if (user.getFriendListPrivacy() != null) existingUser.setFriendListPrivacy(user.getFriendListPrivacy());
+        if (user.getFollowerListPrivacy() != null) existingUser.setFollowerListPrivacy(user.getFollowerListPrivacy());
 
         // Chỉ cập nhật URL ảnh khi có giá trị thực, không ghi đè bằng chuỗi rỗng
         if (user.getAvatarUrl() != null && !user.getAvatarUrl().isBlank())

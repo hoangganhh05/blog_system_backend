@@ -76,6 +76,9 @@ public class DTOMapper {
         dto.setMessageScope(user.getMessageScope());
         dto.setShowActiveStatus(user.getShowActiveStatus());
         dto.setShowFollowingList(user.getShowFollowingList());
+        dto.setShowFriendsList(user.getShowFriendsList());
+        dto.setFriendListPrivacy(user.getFriendListPrivacy());
+        dto.setFollowerListPrivacy(user.getFollowerListPrivacy());
 
         return dto;
     }

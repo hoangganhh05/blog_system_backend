@@ -45,6 +45,8 @@ public class User {
     private Boolean showActiveStatus = true;
     private Boolean showFollowingList = true;
     private Boolean showFriendsList = true;
+    private String friendListPrivacy = "PUBLIC"; // "PUBLIC", "PRIVATE"
+    private String followerListPrivacy = "PUBLIC"; // "PUBLIC", "PRIVATE"
 
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
