@@ -44,6 +44,7 @@ public class User {
     private String messageScope = "EVERYONE"; // "EVERYONE", "FRIENDS"
     private Boolean showActiveStatus = true;
     private Boolean showFollowingList = true;
+    private Boolean showFriendsList = true;
 
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

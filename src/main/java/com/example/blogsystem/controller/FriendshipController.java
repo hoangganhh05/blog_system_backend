@@ -20,10 +20,12 @@ import java.util.stream.Collectors;
 public class FriendshipController {
 
     private final FriendshipService friendshipService;
+    private final com.example.blogsystem.repository.UserRepository userRepository;
     private final CurrentUser currentUser;
 
-    public FriendshipController(FriendshipService friendshipService, CurrentUser currentUser) {
+    public FriendshipController(FriendshipService friendshipService, com.example.blogsystem.repository.UserRepository userRepository, CurrentUser currentUser) {
         this.friendshipService = friendshipService;
+        this.userRepository = userRepository;
         this.currentUser = currentUser;
     }
 
@@ -83,13 +85,25 @@ public class FriendshipController {
 
     // Lấy danh sách bạn bè đã kết bạn của chính mình: GET /friends/list
     @GetMapping("/list")
-    public ResponseEntity<List<UserPublicDTO>> getMyFriendsList() {
+    public ResponseEntity<?> getMyFriendsList() {
         return getFriendsList(currentUser.id());
     }
 
     // Lấy danh sách bạn bè đã kết bạn: GET /friends/list/{userId}
     @GetMapping({"/list/{userId}", "/{userId}"})
-    public ResponseEntity<List<UserPublicDTO>> getFriendsList(@PathVariable Long userId) {
+    public ResponseEntity<?> getFriendsList(@PathVariable Long userId) {
+        // Kiểm tra quyền riêng tư nếu xem danh sách của người khác
+        if (userId != null && !currentUser.id().equals(userId)) {
+            User targetUser = userRepository.findById(userId).orElse(null);
+            if (targetUser != null && Boolean.FALSE.equals(targetUser.getShowFriendsList())) {
+                Map<String, Object> res = new HashMap<>();
+                res.put("isPrivate", true);
+                res.put("message", "Người dùng này đã ẩn danh sách bạn bè.");
+                res.put("friends", List.of());
+                return ResponseEntity.ok(res);
+            }
+        }
+
         List<User> friends = friendshipService.getFriendsList(userId);
         List<UserPublicDTO> dtos = friends.stream()
                 .map(DTOMapper::toUserPublicDTO)
