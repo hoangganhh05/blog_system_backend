@@ -18,11 +18,13 @@ public class FriendshipServiceImpl implements FriendshipService {
     private final FriendshipRepository friendshipRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final com.example.blogsystem.service.FollowService followService;
 
-    public FriendshipServiceImpl(FriendshipRepository friendshipRepository, UserRepository userRepository, NotificationService notificationService) {
+    public FriendshipServiceImpl(FriendshipRepository friendshipRepository, UserRepository userRepository, NotificationService notificationService, com.example.blogsystem.service.FollowService followService) {
         this.friendshipRepository = friendshipRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.followService = followService;
     }
 
     @Override
@@ -85,6 +87,12 @@ public class FriendshipServiceImpl implements FriendshipService {
         friendship.setStatus("ACCEPTED");
         friendshipRepository.save(friendship);
 
+        // Thiết lập trạng thái theo dõi lẫn nhau khi đã trở thành bạn bè
+        try {
+            followService.follow(currentUserId, requesterId);
+            followService.follow(requesterId, currentUserId);
+        } catch (Exception ignored) {}
+
         // Gửi thông báo lại cho người gửi lời mời ban đầu
         User requester = friendship.getRequester();
         User receiver = friendship.getReceiver();
@@ -109,6 +117,11 @@ public class FriendshipServiceImpl implements FriendshipService {
     public Map<String, Object> removeOrCancelFriendship(Long userId1, Long userId2) {
         Optional<Friendship> existing = friendshipRepository.findFriendshipBetween(userId1, userId2);
         existing.ifPresent(friendshipRepository::delete);
+
+        // Hủy kết bạn (Unfriend) -> tự động hủy luôn trạng thái theo dõi giữa hai tài khoản
+        try {
+            followService.removeMutualFollow(userId1, userId2);
+        } catch (Exception ignored) {}
 
         Map<String, Object> res = new HashMap<>();
         res.put("status", "NONE");

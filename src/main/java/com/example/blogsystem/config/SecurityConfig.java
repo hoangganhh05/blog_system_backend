@@ -78,6 +78,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/stories/**", "/api/stories/**", "/v1/stories/**", "/api/v1/stories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/users/**", "/api/users/**", "/v1/users/**", "/api/v1/users/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/songs/**", "/api/songs/**", "/v1/songs/**", "/api/v1/songs/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/follows/**", "/api/follows/**", "/v1/follows/**", "/api/v1/follows/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/games/caro/**", "/api/games/caro/**", "/v1/games/caro/**", "/api/v1/games/caro/**").permitAll()
 
                         // Public view counters
