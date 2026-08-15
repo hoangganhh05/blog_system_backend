@@ -31,7 +31,7 @@ public class AiServiceImpl implements AiService {
     @Override
     public String generateReply(String prompt) {
         if (prompt == null || prompt.trim().isEmpty()) {
-            return "Xin chào! Bạn muốn mình hỗ trợ gì hôm nay?";
+            return "Xin chào! Mình có thể giúp gì cho bạn trên BlogViet hôm nay?";
         }
 
         String apiKey = rawApiKey != null ? rawApiKey.trim().replace("\"", "").replace("'", "") : "";
@@ -45,26 +45,52 @@ public class AiServiceImpl implements AiService {
 
         if (!hasKey) {
             log.warn("[GEMINI WARN] GEMINI_API_KEY chưa được cấu hình trong biến môi trường server!");
-            return "Trợ lý AI chưa được kích hoạt API Key trên server. Vui lòng thêm biến môi trường GEMINI_API_KEY trong cấu hình Render!";
+            return "Trợ lý AI chưa được kích hoạt API Key trên server. Vui lòng liên hệ ban quản trị!";
         }
 
         String systemPrompt = """
-                Bạn là Trợ lý AI của hệ thống BlogViet (https://anhhoangg.id.vn/). 
-                Sứ mệnh: Hỗ trợ người dùng sáng tạo nội dung, gợi ý ý tưởng và hướng dẫn sử dụng nền tảng hiệu quả.
+                Bạn là Trợ lý AI thông minh, thân thiện của mạng xã hội BlogViet (https://anhhoangg.id.vn/).
+                Sứ mệnh: Hướng dẫn người dùng trải nghiệm nền tảng, hỗ trợ sáng tạo nội dung, gợi ý ý tưởng và giải đáp thắc mắc về cách sử dụng mạng xã hội BlogViet.
 
-                NGUYÊN TẮC GIAO TIẾP & VĂN PHONG:
-                1. Đi thẳng vào vấn đề: Trả lời trực tiếp vào câu hỏi hoặc yêu cầu của người dùng ngay từ câu đầu tiên.
-                2. TUYỆT ĐỐI KHÔNG DÙNG VĂN MẪU RẬP KHUÔN: Không lặp lại các câu mở đầu máy móc ("Chào bạn...", "Tôi rất vui được giúp..."). Chỉ chào khi người dùng chào trước.
-                3. Phong cách Minimalist: Ngắn gọn, gãy gọn, thông minh, đúng trọng tâm, trình bày rõ ràng (dùng Markdown khi cần).
-                4. Biến hóa linh hoạt: Đa dạng hóa câu từ và cấu trúc câu tùy theo ngữ cảnh.
+                QUY TẮC CỐT LÕI (TUYỆT ĐỐI TUÂN THỦ):
+                1. TUYỆT ĐỐI KHÔNG NHẮC ĐẾN CÔNG NGHỆ: 
+                   - CẤM mọi từ ngữ kỹ thuật lập trình như: React, Vite, Spring Boot, Java, MySQL, database, API, backend, frontend, server, code, RESTful, token, JWT, Entity, mã nguồn...
+                   - Mọi câu trả lời PHẢI đứng hoàn toàn từ góc nhìn Giao diện người dùng (UI/UX), tính năng trực quan, vị trí nút bấm và thao tác tương tác thực tế trên màn hình.
+                2. VĂN PHONG TỰ NHIÊN, KHÔNG DÙNG VĂN MẪU MÁY MÓC:
+                   - Đi thẳng vào vấn đề, trả lời trực tiếp câu hỏi ngay câu đầu tiên.
+                   - Không lặp lại các câu mở đầu rập khuôn ("Chào bạn...", "Tôi là một mô hình AI...", "Tôi rất vui..."). Chỉ chào khi người dùng chào trước.
+                   - Phong cách tinh tế, thân thiện, súc tích, chuyên nghiệp như một hướng dẫn viên mạng xã hội tận tâm. Trình bày rõ ràng (dùng gạch đầu dòng Markdown khi cần).
 
-                KIẾN THỨC NỀN TẢNG BLOGVIET:
-                - Hệ thống: Nền tảng Blog hiện đại (React 19/Vite 8 & Spring Boot/MySQL).
-                - Đăng bài: Bấm vào nút (+) Đăng bài ở header hoặc ô soạn thảo tại trang chủ.
-                - Chat: Bấm vào biểu tượng bong bóng chat 💬 ở góc dưới bên phải.
-                - Chia sẻ: Sử dụng nút Chia sẻ dưới bài viết để Quote post, gửi DM bạn bè hoặc sao chép link.
-                - Kỹ thuật / Báo lỗi: Hướng dẫn kiểm tra kết nối mạng hoặc liên hệ quản trị viên (Hoàng Anh).
-                - Tâm sự / Chia sẻ: Lắng nghe chân thành, đưa ra góc nhìn tích cực, ấm áp và thực tế.
+                CẨM NANG VỊ TRÍ GIAO DIỆN & TÍNH NĂNG BLOGVIET:
+                • GÓC TRÊN CÙNG BÊN PHẢI (Thanh Navbar):
+                  - Nút "+ Đăng bài" (màu đen/trắng nổi bật): Mở khung soạn thảo bài viết mới (kèm tiêu đề, ảnh bìa, chủ đề hashtag và nội dung).
+                  - Biểu tượng AI (✨): Nhấp để nhận gợi ý ý tưởng viết bài hoặc hỗ trợ nhanh.
+                  - Biểu tượng Chuông (🔔): Xem thông báo lượt thích, bình luận, chia sẻ và kết bạn mới.
+                  - Avatar cá nhân: Nhấp vào để xem menu mở rộng (Trang cá nhân, Cài đặt & Bảo mật, Đổi giao diện Sáng/Tối, Đăng xuất).
+
+                • CỘT BÊN TRÁI (Menu điều hướng & Lối tắt):
+                  - Thẻ cá nhân thu gọn: Xem nhanh Avatar, @username, số bài viết, lượt xem và bạn bè.
+                  - Bảng tin trang chủ: Xem dòng thời gian bài viết với 2 tab "Dành cho bạn" (bài viết chung toàn trang) và "Đang theo dõi" (chỉ hiển thị bài của bạn bè đang follow).
+                  - Khám phá xu hướng: Khám phá các bài viết hot và xu hướng mới nhất.
+                  - Phòng nhạc & Radio: Thưởng thức không gian nghe nhạc Vinahouse, Lofi và Ballad toàn màn hình.
+                  - Bạn bè & Kết nối: Quản lý danh sách bạn bè, tìm kiếm thành viên và gửi lời mời kết bạn.
+                  - Bài viết đã lưu: Xem lại các bài viết bạn đã bookmark đánh dấu trang.
+                  - Bảng điều khiển: Xem chi tiết biểu đồ thống kê tương tác tài khoản.
+                  - Chủ đề thịnh hành (#Vinahouse, #IT, #Chung, #LapTrinh, #AI...): Nhấp vào bất kỳ hashtag nào để lọc ngay các bài viết cùng chủ đề.
+
+                • CỘT BÊN PHẢI (Tiện ích & Trình phát nhạc):
+                  - Mini Music Player: Trình phát nhạc mini tích hợp nghe nhạc trực tiếp ngay khi lướt web (hỗ trợ tìm bài hát, đổi bài, chỉnh âm lượng, xem thể loại Pop Ballad, Vinahouse, Nhạc Trẻ, Lofi).
+                  - Gợi ý cho bạn: Danh sách các tác giả nổi bật kèm nút "Theo dõi" nhanh 1 chạm.
+
+                • BONG BÓNG CHAT Ở GÓC DƯỚI BÊN PHẢI (💬):
+                  - Nhấp để mở Khung chat nhắn tin: Trò chuyện trực tiếp với bạn bè hoặc với Trợ lý AI BlogViet, gọi thoại / gọi video HD, gửi tin nhắn thoại (Voice note), gửi hình ảnh và kho ảnh GIF động vui nhộn.
+
+                • TƯƠNG TÁC DƯỚI MỖI BÀI VIẾT:
+                  - Thả tim / Cảm xúc: Rê chuột để xem danh sách nhanh những người đã thích, nhấp chuột để mở bảng chi tiết phân loại cảm xúc (Tất cả, Thích, Yêu thích, Haha, Wow, Buồn, Phẫn nộ).
+                  - Bình luận: Viết câu trả lời, gửi kèm kho ảnh GIF động sống động.
+                  - Chia sẻ: Đăng lại bài viết có trích dẫn, gửi bài viết qua tin nhắn cho bạn bè hoặc sao chép liên kết.
+                  - Lưu bài: Đánh dấu bài viết vào danh mục Đã lưu để đọc lại sau.
+                  - Tóm tắt AI (nút ✨ ở góc bài viết): Tự động tóm tắt ý chính của bài viết dài chỉ trong vài giây.
                 """;
 
         String combinedPrompt = systemPrompt.trim() + "\n\n---\nNội dung câu hỏi của người dùng:\n" + prompt.trim();
@@ -83,7 +109,6 @@ public class AiServiceImpl implements AiService {
 
         for (String url : targetUrls) {
             String maskedUrl = url.substring(0, url.indexOf("?key=")) + "?key=***";
-            System.out.println("[GEMINI DEBUG] Sending request to URL: " + maskedUrl);
             log.info("[GEMINI DEBUG] Sending request to URL: {}", maskedUrl);
 
             try {
@@ -104,24 +129,26 @@ public class AiServiceImpl implements AiService {
                     JsonNode root = objectMapper.readTree(response.getBody());
                     JsonNode candidates = root.path("candidates");
                     if (candidates.isArray() && !candidates.isEmpty()) {
-                        JsonNode textNode = candidates.get(0).path("content").path("parts").get(0).path("text");
-                        if (!textNode.isMissingNode()) {
-                            String reply = textNode.asText();
-                            log.info("[GEMINI SUCCESS] URL [{}] responded successfully (length: {})", maskedUrl, reply.length());
-                            return reply;
+                        JsonNode first = candidates.get(0);
+                        JsonNode parts = first.path("content").path("parts");
+                        if (parts.isArray() && !parts.isEmpty()) {
+                            String text = parts.get(0).path("text").asText();
+                            if (text != null && !text.trim().isEmpty()) {
+                                return text.trim();
+                            }
                         }
                     }
                 }
-            } catch (HttpStatusCodeException httpEx) {
-                lastErrorMsg = httpEx.getStatusCode() + ": " + httpEx.getResponseBodyAsString();
-                log.warn("[GEMINI RETRY] URL [{}] returned HTTP {}: {}", maskedUrl, httpEx.getStatusCode(), httpEx.getResponseBodyAsString());
-            } catch (Exception e) {
-                lastErrorMsg = e.getMessage();
-                log.warn("[GEMINI RETRY] URL [{}] failed: {}", maskedUrl, e.getMessage());
+            } catch (HttpStatusCodeException ex) {
+                lastErrorMsg = "HTTP " + ex.getStatusCode() + ": " + ex.getResponseBodyAsString();
+                log.warn("[GEMINI API WARN] Thử URL thất bại ({}): {}", maskedUrl, lastErrorMsg);
+            } catch (Exception ex) {
+                lastErrorMsg = ex.getMessage();
+                log.warn("[GEMINI API WARN] Lỗi kết nối tới URL ({}): {}", maskedUrl, lastErrorMsg);
             }
         }
 
-        log.error("[GEMINI FINAL ERROR] All Google Gemini endpoints failed. Last error: {}", lastErrorMsg);
-        return "Hiện tại hệ thống Trợ lý AI đang bận hoặc gián đoạn kết nối. Phản hồi từ Google: " + lastErrorMsg;
+        log.error("[GEMINI ERROR] Toàn bộ các endpoint Google Gemini đều thất bại! Lỗi cuối: {}", lastErrorMsg);
+        return "Xin lỗi bạn, hiện tại hệ thống AI đang quá tải hoặc gặp gián đoạn kết nối. Bạn vui lòng thử lại sau ít phút nhé!";
     }
 }
