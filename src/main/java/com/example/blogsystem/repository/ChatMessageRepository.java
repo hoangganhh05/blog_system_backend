@@ -11,8 +11,8 @@ import java.util.List;
 @Repository
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
 
-    // Lấy lịch sử trò chuyện giữa 2 người dùng (sắp xếp tăng dần theo thời gian)
-    @Query("SELECT m FROM ChatMessage m WHERE (m.sender.id = :u1 AND m.receiver.id = :u2) OR (m.sender.id = :u2 AND m.receiver.id = :u1) ORDER BY m.createdAt ASC")
+    // Lấy lịch sử trò chuyện giữa 2 người dùng (JOIN FETCH để tránh N+1 và timeout, sắp xếp tăng dần theo thời gian)
+    @Query("SELECT m FROM ChatMessage m LEFT JOIN FETCH m.sender LEFT JOIN FETCH m.receiver WHERE (m.sender.id = :u1 AND m.receiver.id = :u2) OR (m.sender.id = :u2 AND m.receiver.id = :u1) ORDER BY m.createdAt ASC")
     List<ChatMessage> findChatHistory(@Param("u1") Long u1, @Param("u2") Long u2);
 
     // Kiểm tra xem 2 người dùng đã từng có lịch sử nhắn tin cho nhau chưa
