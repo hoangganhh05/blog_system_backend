@@ -9,11 +9,20 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 @Service
 @Slf4j
@@ -25,37 +34,35 @@ public class AiServiceImpl implements AiService {
     @Value("${GEMINI_MODEL:${gemini.model:gemini-3.7-flash}}")
     private String rawModel;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final HttpClient httpClient;
 
-    @Override
-    public String generateReply(String prompt) {
-        return generateReply(prompt, null, null);
+    public AiServiceImpl() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(30_000); // 30s
+        factory.setReadTimeout(60_000);    // 60s
+        this.restTemplate = new RestTemplate(factory);
+
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(30))
+                .build();
     }
 
-    @Override
-    public String generateReply(String prompt, String imageBase64, String imageMimeType) {
-        if ((prompt == null || prompt.trim().isEmpty()) && (imageBase64 == null || imageBase64.trim().isEmpty())) {
-            return "Xin chào! Mình có thể giúp gì cho bạn trên BlogViet hôm nay?";
-        }
+    private String getCleanApiKey() {
+        return rawApiKey != null ? rawApiKey.trim().replace("\"", "").replace("'", "") : "";
+    }
 
-        String actualPrompt = prompt != null && !prompt.trim().isEmpty() ? prompt.trim() : "Hãy phân tích hình ảnh này giúp tôi.";
-
-        String apiKey = rawApiKey != null ? rawApiKey.trim().replace("\"", "").replace("'", "") : "";
+    private String getCleanModelName() {
         String modelName = "gemini-3.7-flash";
         if (rawModel != null && !rawModel.trim().isEmpty()) {
             modelName = rawModel.replace("models/", "").replace("model/", "").trim();
         }
+        return modelName;
+    }
 
-        boolean hasKey = !apiKey.isEmpty();
-        log.info("[GEMINI DEBUG] API Key loaded: {} (length: {}), target model: {}", hasKey, apiKey.length(), modelName);
-
-        if (!hasKey) {
-            log.warn("[GEMINI WARN] GEMINI_API_KEY chưa được cấu hình trong biến môi trường server!");
-            return "Trợ lý AI chưa được kích hoạt API Key trên server. Vui lòng liên hệ ban quản trị!";
-        }
-
-        String systemPrompt = """
+    private String getSystemPrompt() {
+        return """
                 Bạn là Trợ lý AI thông minh, thân thiện của mạng xã hội BlogViet (https://anhhoangg.id.vn/).
                 Sứ mệnh: Hướng dẫn người dùng trải nghiệm nền tảng, hỗ trợ sáng tạo nội dung, giải đáp thắc mắc, phân tích hình ảnh đính kèm (ảnh chụp màn hình lỗi, ảnh bài viết, tác phẩm nghệ thuật, meme...) về cách sử dụng mạng xã hội BlogViet.
 
@@ -99,10 +106,12 @@ public class AiServiceImpl implements AiService {
                   - Lưu bài: Đánh dấu bài viết vào danh mục Đã lưu để đọc lại sau.
                   - Tóm tắt AI (nút ✨ ở góc bài viết): Tự động tóm tắt ý chính của bài viết dài chỉ trong vài giây.
                 """;
+    }
 
-        String combinedPrompt = systemPrompt.trim() + "\n\n---\nNội dung câu hỏi của người dùng:\n" + actualPrompt;
+    private Map<String, Object> buildRequestBody(String prompt, String imageBase64, String imageMimeType) {
+        String actualPrompt = prompt != null && !prompt.trim().isEmpty() ? prompt.trim() : "Hãy phân tích hình ảnh này giúp tôi.";
+        String combinedPrompt = getSystemPrompt().trim() + "\n\n---\nNội dung câu hỏi của người dùng:\n" + actualPrompt;
 
-        // Xử lý Multimodal Image Parts nếu có
         List<Map<String, Object>> partsList = new ArrayList<>();
         partsList.add(Collections.singletonMap("text", combinedPrompt));
 
@@ -126,7 +135,43 @@ public class AiServiceImpl implements AiService {
             partsList.add(imagePart);
         }
 
-        // Danh sách URL ưu tiên: Model thế hệ mới nhất (Gemini 3.7 Flash → 3.6 Flash → 2.5 Flash fallback)
+        Map<String, Object> body = new HashMap<>();
+        Map<String, Object> contentMap = new HashMap<>();
+        contentMap.put("parts", partsList);
+        body.put("contents", Collections.singletonList(contentMap));
+
+        // Tối ưu các tham số tạo sinh (Generation Parameters)
+        Map<String, Object> generationConfig = new HashMap<>();
+        generationConfig.put("temperature", 0.7);
+        generationConfig.put("topK", 40);
+        generationConfig.put("topP", 0.95);
+        generationConfig.put("maxOutputTokens", 2048);
+        body.put("generationConfig", generationConfig);
+
+        return body;
+    }
+
+    @Override
+    public String generateReply(String prompt) {
+        return generateReply(prompt, null, null);
+    }
+
+    @Override
+    public String generateReply(String prompt, String imageBase64, String imageMimeType) {
+        if ((prompt == null || prompt.trim().isEmpty()) && (imageBase64 == null || imageBase64.trim().isEmpty())) {
+            return "Xin chào! Mình có thể giúp gì cho bạn trên BlogViet hôm nay?";
+        }
+
+        String apiKey = getCleanApiKey();
+        String modelName = getCleanModelName();
+
+        if (apiKey.isEmpty()) {
+            log.warn("[GEMINI WARN] GEMINI_API_KEY chưa được cấu hình trong biến môi trường server!");
+            return "Trợ lý AI chưa được kích hoạt API Key trên server. Vui lòng liên hệ ban quản trị!";
+        }
+
+        Map<String, Object> body = buildRequestBody(prompt, imageBase64, imageMimeType);
+
         List<String> targetUrls = Arrays.asList(
                 "https://generativelanguage.googleapis.com/v1/models/" + modelName + ":generateContent?key=" + apiKey,
                 "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + apiKey,
@@ -146,14 +191,7 @@ public class AiServiceImpl implements AiService {
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
 
-                // Body chuẩn Google REST API v1/v1beta
-                Map<String, Object> body = new HashMap<>();
-                Map<String, Object> contentMap = new HashMap<>();
-                contentMap.put("parts", partsList);
-                body.put("contents", Collections.singletonList(contentMap));
-
                 HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
-
                 ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
 
                 if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
@@ -180,6 +218,98 @@ public class AiServiceImpl implements AiService {
         }
 
         log.error("[GEMINI ERROR] Toàn bộ các endpoint Google Gemini đều thất bại! Lỗi cuối: {}", lastErrorMsg);
-        return "Xin lỗi bạn, hiện tại hệ thống AI đang quá tải hoặc gặp gián đoạn kết nối. Bạn vui lòng thử lại sau ít phút nhé!";
+        return "Xin lỗi bạn, hiện tại hệ thống AI đang quá tải hoặc gặp gián đoạn kết nối. Bạn vui lòng bấm nút Thử lại nhé!";
+    }
+
+    @Override
+    public void streamReply(String prompt, String imageBase64, String imageMimeType, Consumer<String> onChunk) {
+        if ((prompt == null || prompt.trim().isEmpty()) && (imageBase64 == null || imageBase64.trim().isEmpty())) {
+            onChunk.accept("Xin chào! Mình có thể giúp gì cho bạn trên BlogViet hôm nay?");
+            return;
+        }
+
+        String apiKey = getCleanApiKey();
+        String modelName = getCleanModelName();
+
+        if (apiKey.isEmpty()) {
+            onChunk.accept("Trợ lý AI chưa được kích hoạt API Key trên server. Vui lòng liên hệ ban quản trị!");
+            return;
+        }
+
+        Map<String, Object> body = buildRequestBody(prompt, imageBase64, imageMimeType);
+        String jsonPayload;
+        try {
+            jsonPayload = objectMapper.writeValueAsString(body);
+        } catch (Exception e) {
+            log.error("Lỗi serialize JSON payload: ", e);
+            onChunk.accept("Không thể tạo yêu cầu gửi tới AI. Vui lòng thử lại!");
+            return;
+        }
+
+        List<String> streamUrls = Arrays.asList(
+                "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":streamGenerateContent?alt=sse&key=" + apiKey,
+                "https://generativelanguage.googleapis.com/v1/models/" + modelName + ":streamGenerateContent?alt=sse&key=" + apiKey,
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:streamGenerateContent?alt=sse&key=" + apiKey,
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=" + apiKey
+        );
+
+        boolean streamedAny = false;
+
+        for (String url : streamUrls) {
+            String maskedUrl = url.substring(0, url.indexOf("?key=")) + "?key=***";
+            log.info("[GEMINI STREAM] Bắt đầu stream tới URL: {}", maskedUrl);
+
+            try {
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(url))
+                        .header("Content-Type", "application/json")
+                        .timeout(Duration.ofSeconds(60))
+                        .POST(HttpRequest.BodyPublishers.ofString(jsonPayload, StandardCharsets.UTF_8))
+                        .build();
+
+                HttpResponse<Stream<String>> response = httpClient.send(request, HttpResponse.BodyHandlers.ofLines());
+
+                if (response.statusCode() == 200) {
+                    try (Stream<String> lines = response.body()) {
+                        for (Iterator<String> it = lines.iterator(); it.hasNext(); ) {
+                            String line = it.next();
+                            if (line.startsWith("data: ")) {
+                                String json = line.substring(6).trim();
+                                if (!json.isEmpty() && !json.equals("[DONE]")) {
+                                    try {
+                                        JsonNode root = objectMapper.readTree(json);
+                                        JsonNode candidates = root.path("candidates");
+                                        if (candidates.isArray() && !candidates.isEmpty()) {
+                                            JsonNode first = candidates.get(0);
+                                            JsonNode parts = first.path("content").path("parts");
+                                            if (parts.isArray() && !parts.isEmpty()) {
+                                                String text = parts.get(0).path("text").asText();
+                                                if (text != null && !text.isEmpty()) {
+                                                    onChunk.accept(text);
+                                                    streamedAny = true;
+                                                }
+                                            }
+                                        }
+                                    } catch (Exception parseEx) {
+                                        // Ignore line parsing glitch
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (streamedAny) {
+                        return; // Hoàn thành streaming thành công!
+                    }
+                }
+            } catch (Exception ex) {
+                log.warn("[GEMINI STREAM WARN] Lỗi stream qua URL ({}): {}", maskedUrl, ex.getMessage());
+            }
+        }
+
+        // Nếu stream thất bại hoàn toàn, fallback sang gọi đồng bộ generateReply
+        log.warn("[GEMINI STREAM] Chuyển hướng fallback sang generateReply đồng bộ...");
+        String fallbackReply = generateReply(prompt, imageBase64, imageMimeType);
+        onChunk.accept(fallbackReply);
     }
 }
