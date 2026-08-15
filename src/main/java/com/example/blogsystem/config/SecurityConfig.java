@@ -21,10 +21,12 @@ import org.springframework.security.config.Customizer;
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
+    private final EncryptionFilter encryptionFilter;
     private final UserRepository userRepository;
 
-    public SecurityConfig(JwtFilter jwtFilter, UserRepository userRepository) {
+    public SecurityConfig(JwtFilter jwtFilter, EncryptionFilter encryptionFilter, UserRepository userRepository) {
         this.jwtFilter = jwtFilter;
+        this.encryptionFilter = encryptionFilter;
         this.userRepository = userRepository;
     }
 
@@ -62,8 +64,9 @@ public class SecurityConfig {
                         // Cho phép Preflight OPTIONS request từ CORS
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Public Auth endpoints
+                        // Public Auth & WebSocket endpoints
                         .requestMatchers("/auth/**", "/api/auth/**", "/v1/auth/**", "/api/v1/auth/**").permitAll()
+                        .requestMatchers("/ws/**", "/api/ws/**").permitAll()
 
                         // Public AI Assistant endpoints
                         .requestMatchers("/ai/**", "/api/ai/**", "/v1/ai/**", "/api/v1/ai/**").permitAll()
@@ -108,7 +111,8 @@ public class SecurityConfig {
                         })
                 )
 
-                // Đăng ký JwtFilter chạy trước filter mặc định
+                // Đăng ký EncryptionFilter và JwtFilter
+                .addFilterBefore(encryptionFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
