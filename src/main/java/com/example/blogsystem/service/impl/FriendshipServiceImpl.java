@@ -18,12 +18,14 @@ public class FriendshipServiceImpl implements FriendshipService {
     private final FriendshipRepository friendshipRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final com.example.blogsystem.repository.NotificationRepository notificationRepository;
     private final com.example.blogsystem.service.FollowService followService;
 
-    public FriendshipServiceImpl(FriendshipRepository friendshipRepository, UserRepository userRepository, NotificationService notificationService, com.example.blogsystem.service.FollowService followService) {
+    public FriendshipServiceImpl(FriendshipRepository friendshipRepository, UserRepository userRepository, NotificationService notificationService, com.example.blogsystem.repository.NotificationRepository notificationRepository, com.example.blogsystem.service.FollowService followService) {
         this.friendshipRepository = friendshipRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.notificationRepository = notificationRepository;
         this.followService = followService;
     }
 
@@ -84,8 +86,20 @@ public class FriendshipServiceImpl implements FriendshipService {
         }
 
         Friendship friendship = existing.get();
+        if ("ACCEPTED".equals(friendship.getStatus())) {
+            Map<String, Object> res = new HashMap<>();
+            res.put("status", "FRIENDS");
+            res.put("message", "Hai bạn đã là bạn bè!");
+            return res;
+        }
+
         friendship.setStatus("ACCEPTED");
         friendshipRepository.save(friendship);
+
+        // Tự động xóa thông báo lời mời kết bạn cũ của người nhận
+        try {
+            notificationRepository.deleteFriendRequestNotifications(currentUserId, requesterId);
+        } catch (Exception ignored) {}
 
         // Thiết lập trạng thái theo dõi lẫn nhau khi đã trở thành bạn bè
         try {
@@ -117,6 +131,12 @@ public class FriendshipServiceImpl implements FriendshipService {
     public Map<String, Object> removeOrCancelFriendship(Long userId1, Long userId2) {
         Optional<Friendship> existing = friendshipRepository.findFriendshipBetween(userId1, userId2);
         existing.ifPresent(friendshipRepository::delete);
+
+        // Tự động xóa thông báo lời mời kết bạn giữa hai bên
+        try {
+            notificationRepository.deleteFriendRequestNotifications(userId1, userId2);
+            notificationRepository.deleteFriendRequestNotifications(userId2, userId1);
+        } catch (Exception ignored) {}
 
         // Hủy kết bạn (Unfriend) -> tự động hủy luôn trạng thái theo dõi giữa hai tài khoản
         try {

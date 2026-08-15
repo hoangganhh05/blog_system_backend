@@ -61,4 +61,13 @@ public class NotificationController {
         notificationService.markAllAsRead(currentUser.id());
         return ResponseEntity.ok().build();
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteNotification(@PathVariable Long id) {
+        notificationRepository.findById(id).ifPresent(n -> {
+            currentUser.requireOwnerOrAdmin(n.getUser().getId());
+            notificationRepository.delete(n);
+        });
+        return ResponseEntity.ok().build();
+    }
 }
