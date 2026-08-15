@@ -38,6 +38,13 @@ public class User {
     private String bannerUrl;   // link ảnh bìa
     private String emailPrivacy = "private"; // quyền riêng tư email: "private", "friends", "public"
 
+    // Cài đặt quyền riêng tư bài viết & tương tác lưu Database vĩnh viễn
+    private String postVisibility = "PUBLIC"; // "PUBLIC", "FRIENDS", "ONLY_ME"
+    private String friendRequestScope = "EVERYONE"; // "EVERYONE", "FRIENDS_OF_FRIENDS"
+    private String messageScope = "EVERYONE"; // "EVERYONE", "FRIENDS"
+    private Boolean showActiveStatus = true;
+    private Boolean showFollowingList = true;
+
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Post> posts;

@@ -66,6 +66,11 @@ public class UserImpl implements UserService {
         if (user.getBio() != null) existingUser.setBio(user.getBio());
         if (user.getAvatarColor() != null) existingUser.setAvatarColor(user.getAvatarColor());
         if (user.getEmailPrivacy() != null) existingUser.setEmailPrivacy(user.getEmailPrivacy());
+        if (user.getPostVisibility() != null) existingUser.setPostVisibility(user.getPostVisibility());
+        if (user.getFriendRequestScope() != null) existingUser.setFriendRequestScope(user.getFriendRequestScope());
+        if (user.getMessageScope() != null) existingUser.setMessageScope(user.getMessageScope());
+        if (user.getShowActiveStatus() != null) existingUser.setShowActiveStatus(user.getShowActiveStatus());
+        if (user.getShowFollowingList() != null) existingUser.setShowFollowingList(user.getShowFollowingList());
 
         // Chỉ cập nhật URL ảnh khi có giá trị thực, không ghi đè bằng chuỗi rỗng
         if (user.getAvatarUrl() != null && !user.getAvatarUrl().isBlank())

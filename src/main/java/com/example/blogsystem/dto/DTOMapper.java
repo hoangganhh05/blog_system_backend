@@ -71,6 +71,11 @@ public class DTOMapper {
         dto.setAvatarUrl(user.getAvatarUrl());
         dto.setBannerUrl(user.getBannerUrl());
         dto.setEmailPrivacy(user.getEmailPrivacy());
+        dto.setPostVisibility(user.getPostVisibility());
+        dto.setFriendRequestScope(user.getFriendRequestScope());
+        dto.setMessageScope(user.getMessageScope());
+        dto.setShowActiveStatus(user.getShowActiveStatus());
+        dto.setShowFollowingList(user.getShowFollowingList());
 
         return dto;
     }
