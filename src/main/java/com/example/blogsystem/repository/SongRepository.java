@@ -14,6 +14,8 @@ public interface SongRepository extends JpaRepository<Song, Long> {
 
     Page<Song> findByIsActiveTrueOrderByCreatedAtDesc(Pageable pageable);
 
+    boolean existsByTitleIgnoreCaseAndArtistIgnoreCase(String title, String artist);
+
     List<Song> findByTitleContainingIgnoreCaseOrArtistContainingIgnoreCaseOrGenreContainingIgnoreCase(
             String title, String artist, String genre
     );

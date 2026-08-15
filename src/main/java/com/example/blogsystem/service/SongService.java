@@ -21,4 +21,6 @@ public interface SongService {
     SongDTO updateSong(Long id, SongDTO songDTO);
 
     void deleteSong(Long id);
+
+    int syncTrendingCharts();
 }

@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping({"/songs", "/api/songs", "/v1/songs", "/api/v1/songs"})
@@ -62,6 +63,17 @@ public class SongController {
     public ResponseEntity<List<SongDTO>> bulkImportSongs(@RequestBody List<SongDTO> songDTOList) {
         List<SongDTO> imported = songService.bulkImportSongs(songDTOList);
         return ResponseEntity.status(HttpStatus.CREATED).body(imported);
+    }
+
+    // Đồng bộ tức thì kho nhạc Hot Trend vào Database
+    @PostMapping("/sync-trending")
+    public ResponseEntity<Map<String, Object>> syncTrending() {
+        int added = songService.syncTrendingCharts();
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Đã đồng bộ kho nhạc Hot Trend thành công!",
+                "newAddedCount", added
+        ));
     }
 
     // Cập nhật thông tin bài hát
