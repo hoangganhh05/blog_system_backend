@@ -22,7 +22,7 @@ public class AiServiceImpl implements AiService {
     @Value("${GEMINI_API_KEY:${gemini.api-key:}}")
     private String rawApiKey;
 
-    @Value("${GEMINI_MODEL:${gemini.model:gemini-1.5-flash}}")
+    @Value("${GEMINI_MODEL:${gemini.model:gemini-2.5-flash}}")
     private String rawModel;
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -35,13 +35,13 @@ public class AiServiceImpl implements AiService {
         }
 
         String apiKey = rawApiKey != null ? rawApiKey.trim().replace("\"", "").replace("'", "") : "";
-        String modelName = "gemini-1.5-flash";
+        String modelName = "gemini-2.5-flash";
         if (rawModel != null && !rawModel.trim().isEmpty()) {
             modelName = rawModel.replace("models/", "").replace("model/", "").trim();
         }
 
         boolean hasKey = !apiKey.isEmpty();
-        log.info("[GEMINI DEBUG] API Key loaded: {} (length: {}), modelName: {}", hasKey, apiKey.length(), modelName);
+        log.info("[GEMINI DEBUG] API Key loaded: {} (length: {}), target model: {}", hasKey, apiKey.length(), modelName);
 
         if (!hasKey) {
             log.warn("[GEMINI WARN] GEMINI_API_KEY chưa được cấu hình trong biến môi trường server!");
@@ -69,11 +69,13 @@ public class AiServiceImpl implements AiService {
 
         String combinedPrompt = systemPrompt.trim() + "\n\n---\nNội dung câu hỏi của người dùng:\n" + prompt.trim();
 
-        // Danh sách URL ưu tiên: v1 trước theo chuẩn của Google
+        // Danh sách URL ưu tiên: Model thế hệ mới nhất (Gemini 2.5 Flash / 2.0 Flash)
         List<String> targetUrls = Arrays.asList(
                 "https://generativelanguage.googleapis.com/v1/models/" + modelName + ":generateContent?key=" + apiKey,
                 "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + apiKey,
+                "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=" + apiKey,
                 "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + apiKey,
+                "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent?key=" + apiKey,
                 "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" + apiKey
         );
 
@@ -88,7 +90,7 @@ public class AiServiceImpl implements AiService {
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
 
-                // Body chuẩn Google REST API v1 (đơn giản, tương thích 100%)
+                // Body chuẩn Google REST API v1/v1beta
                 Map<String, Object> body = new HashMap<>();
                 Map<String, Object> contentMap = new HashMap<>();
                 contentMap.put("parts", Collections.singletonList(Collections.singletonMap("text", combinedPrompt)));
