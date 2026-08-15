@@ -119,17 +119,80 @@ public class UserController {
     @PostMapping("/heartbeat")
     public ResponseEntity<Map<String, Object>> heartbeat() {
         Long myId = currentUser.id();
+        boolean[] isOnlineRef = new boolean[]{false};
         if (myId != null) {
             userRepository.findById(myId).ifPresent(u -> {
-                u.setIsOnline(true);
+                boolean showStatus = !Boolean.FALSE.equals(u.getShowActiveStatus());
+                u.setIsOnline(showStatus);
                 u.setLastActiveAt(java.time.LocalDateTime.now());
                 userRepository.save(u);
+                isOnlineRef[0] = showStatus;
             });
         }
         Map<String, Object> res = new HashMap<>();
         res.put("status", "OK");
-        res.put("isOnline", true);
+        res.put("isOnline", isOnlineRef[0]);
         res.put("timestamp", System.currentTimeMillis());
+        return ResponseEntity.ok(res);
+    }
+
+    // Cập nhật trạng thái hoạt động: PUT/POST /users/active-status hoặc /users/status
+    @RequestMapping(
+            value = {"/active-status", "/status", "/{id}/active-status", "/{id}/status"},
+            method = {RequestMethod.PUT, RequestMethod.POST}
+    )
+    public ResponseEntity<Map<String, Object>> updateActiveStatus(
+            @PathVariable(required = false) Long id,
+            @RequestParam(value = "showActiveStatus", required = false) Boolean paramStatus,
+            @RequestParam(value = "enabled", required = false) Boolean paramEnabled,
+            @RequestBody(required = false) Map<String, Object> body) {
+        
+        Long myId = null;
+        try {
+            myId = currentUser.id();
+        } catch (Exception ignored) {
+        }
+        if (myId == null && id != null) {
+            myId = id;
+        }
+
+        Boolean showStatus = null;
+        if (paramStatus != null) {
+            showStatus = paramStatus;
+        } else if (paramEnabled != null) {
+            showStatus = paramEnabled;
+        } else if (body != null) {
+            Object val = body.containsKey("showActiveStatus") ? body.get("showActiveStatus") : body.get("enabled");
+            if (val instanceof Boolean b) {
+                showStatus = b;
+            } else if (val instanceof String s) {
+                showStatus = Boolean.parseBoolean(s);
+            } else if (val instanceof Number n) {
+                showStatus = n.intValue() != 0;
+            }
+        }
+
+        if (showStatus == null) {
+            showStatus = true;
+        }
+
+        if (myId != null) {
+            final boolean finalStatus = showStatus;
+            userRepository.findById(myId).ifPresent(u -> {
+                u.setShowActiveStatus(finalStatus);
+                if (!finalStatus) {
+                    u.setIsOnline(false);
+                } else {
+                    u.setIsOnline(true);
+                    u.setLastActiveAt(java.time.LocalDateTime.now());
+                }
+                userRepository.save(u);
+            });
+        }
+
+        Map<String, Object> res = new HashMap<>();
+        res.put("status", "SUCCESS");
+        res.put("showActiveStatus", showStatus);
         return ResponseEntity.ok(res);
     }
 

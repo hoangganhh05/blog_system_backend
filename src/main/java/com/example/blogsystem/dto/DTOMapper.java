@@ -55,11 +55,12 @@ public class DTOMapper {
         dto.setAvatarUrl(user.getAvatarUrl());
         dto.setBannerUrl(user.getBannerUrl());
 
-        boolean isRecentActive = Boolean.TRUE.equals(user.getIsOnline()) ||
-                (user.getLastActiveAt() != null && user.getLastActiveAt().isAfter(java.time.LocalDateTime.now().minusMinutes(5)));
+        boolean showStatus = !Boolean.FALSE.equals(user.getShowActiveStatus());
+        boolean isRecentActive = showStatus && (Boolean.TRUE.equals(user.getIsOnline()) ||
+                (user.getLastActiveAt() != null && user.getLastActiveAt().isAfter(java.time.LocalDateTime.now().minusMinutes(3))));
         dto.setIsOnline(isRecentActive);
-        dto.setLastActiveAt(user.getLastActiveAt());
-        dto.setShowActiveStatus(user.getShowActiveStatus());
+        dto.setLastActiveAt(showStatus ? user.getLastActiveAt() : null);
+        dto.setShowActiveStatus(showStatus);
 
         return dto;
     }
