@@ -22,7 +22,7 @@ public class AiServiceImpl implements AiService {
     @Value("${GEMINI_API_KEY:${gemini.api-key:}}")
     private String rawApiKey;
 
-    @Value("${GEMINI_MODEL:${gemini.model:gemini-2.5-flash}}")
+    @Value("${GEMINI_MODEL:${gemini.model:gemini-3.7-flash}}")
     private String rawModel;
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -35,7 +35,7 @@ public class AiServiceImpl implements AiService {
         }
 
         String apiKey = rawApiKey != null ? rawApiKey.trim().replace("\"", "").replace("'", "") : "";
-        String modelName = "gemini-2.5-flash";
+        String modelName = "gemini-3.7-flash";
         if (rawModel != null && !rawModel.trim().isEmpty()) {
             modelName = rawModel.replace("models/", "").replace("model/", "").trim();
         }
@@ -95,14 +95,14 @@ public class AiServiceImpl implements AiService {
 
         String combinedPrompt = systemPrompt.trim() + "\n\n---\nNội dung câu hỏi của người dùng:\n" + prompt.trim();
 
-        // Danh sách URL ưu tiên: Model thế hệ mới nhất (Gemini 2.5 Flash / 2.0 Flash)
+        // Danh sách URL ưu tiên: Model thế hệ mới nhất (Gemini 3.7 Flash → 3.6 Flash → 2.5 Flash fallback)
         List<String> targetUrls = Arrays.asList(
                 "https://generativelanguage.googleapis.com/v1/models/" + modelName + ":generateContent?key=" + apiKey,
                 "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + apiKey,
-                "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=" + apiKey,
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + apiKey,
-                "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent?key=" + apiKey,
-                "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" + apiKey
+                "https://generativelanguage.googleapis.com/v1/models/gemini-3.6-flash:generateContent?key=" + apiKey,
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" + apiKey,
+                "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=" + apiKey,
+                "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=" + apiKey
         );
 
         String lastErrorMsg = "";
