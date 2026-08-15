@@ -35,38 +35,28 @@ public class AiServiceImpl implements AiService {
         }
 
         String apiKey = rawApiKey != null ? rawApiKey.trim().replace("\"", "").replace("'", "") : "";
-        String model = rawModel != null && !rawModel.trim().isEmpty() ? rawModel.trim() : "gemini-1.5-flash";
-        String cleanModel = model.replace("models/", "").replace("model/", "").trim();
+        String modelName = "gemini-1.5-flash";
+        if (rawModel != null && !rawModel.trim().isEmpty()) {
+            modelName = rawModel.replace("models/", "").replace("model/", "").trim();
+        }
 
         boolean hasKey = !apiKey.isEmpty();
-        log.info("[GEMINI DEBUG] API Key loaded: {} (length: {}), requested model: {}", hasKey, apiKey.length(), cleanModel);
+        log.info("[GEMINI DEBUG] API Key loaded: {} (length: {}), modelName: {}", hasKey, apiKey.length(), modelName);
 
         if (!hasKey) {
             log.warn("[GEMINI WARN] GEMINI_API_KEY chưa được cấu hình trong biến môi trường server!");
             return "Trợ lý AI chưa được kích hoạt API Key trên server. Vui lòng thêm biến môi trường GEMINI_API_KEY trong cấu hình Render!";
         }
 
-        // Danh sách model ưu tiên thử nghiệm (gemini-1.5-flash, gemini-2.0-flash, gemini-1.5-flash-latest, v1 API)
-        List<String> endpointTemplates = Arrays.asList(
-                "https://generativelanguage.googleapis.com/v1beta/models/" + cleanModel + ":generateContent",
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent",
-                "https://generativelanguage.googleapis.com/v1/models/" + cleanModel + ":generateContent",
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent"
-        );
-
         String systemPrompt = """
                 Bạn là Trợ lý AI của hệ thống BlogViet (https://anhhoangg.id.vn/). 
                 Sứ mệnh: Hỗ trợ người dùng sáng tạo nội dung, gợi ý ý tưởng và hướng dẫn sử dụng nền tảng hiệu quả.
 
-                NGUYÊN TẮC GIAO TIẾP & VĂN PHONG (BẮT BUỘC TUÂN THỦ):
+                NGUYÊN TẮC GIAO TIẾP & VĂN PHONG:
                 1. Đi thẳng vào vấn đề: Trả lời trực tiếp vào câu hỏi hoặc yêu cầu của người dùng ngay từ câu đầu tiên.
-                2. TUYỆT ĐỐI KHÔNG DÙNG VĂN MẪU RẬP KHUÔN:
-                   - Không lặp lại các câu mở đầu máy móc như: "Chào bạn! Tôi là Trợ lý BlogViet...", "Tôi rất vui được giúp...", "Cảm ơn bạn đã hỏi...".
-                   - Chỉ chào hỏi nhẹ nhàng nếu người dùng chủ động chào trước. Các lượt trao đổi tiếp theo hãy trả lời thẳng nội dung.
-                3. Phong cách Minimalist: Ngắn gọn, gãy gọn, thông minh, đúng trọng tâm, trình bày rõ ràng (dùng gạch đầu dòng Markdown khi cần).
-                4. Biến hóa linh hoạt: Đa dạng hóa câu từ và cấu trúc câu tùy theo ngữ cảnh (sáng tạo nội dung, hỗ trợ kỹ thuật, giải đáp thắc mắc, hay trò chuyện tâm sự).
+                2. TUYỆT ĐỐI KHÔNG DÙNG VĂN MẪU RẬP KHUÔN: Không lặp lại các câu mở đầu máy móc ("Chào bạn...", "Tôi rất vui được giúp..."). Chỉ chào khi người dùng chào trước.
+                3. Phong cách Minimalist: Ngắn gọn, gãy gọn, thông minh, đúng trọng tâm, trình bày rõ ràng (dùng Markdown khi cần).
+                4. Biến hóa linh hoạt: Đa dạng hóa câu từ và cấu trúc câu tùy theo ngữ cảnh.
 
                 KIẾN THỨC NỀN TẢNG BLOGVIET:
                 - Hệ thống: Nền tảng Blog hiện đại (React 19/Vite 8 & Spring Boot/MySQL).
@@ -77,43 +67,36 @@ public class AiServiceImpl implements AiService {
                 - Tâm sự / Chia sẻ: Lắng nghe chân thành, đưa ra góc nhìn tích cực, ấm áp và thực tế.
                 """;
 
+        String combinedPrompt = systemPrompt.trim() + "\n\n---\nNội dung câu hỏi của người dùng:\n" + prompt.trim();
+
+        // Danh sách URL ưu tiên: v1 trước theo chuẩn của Google
+        List<String> targetUrls = Arrays.asList(
+                "https://generativelanguage.googleapis.com/v1/models/" + modelName + ":generateContent?key=" + apiKey,
+                "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + apiKey,
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + apiKey,
+                "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" + apiKey
+        );
+
         String lastErrorMsg = "";
 
-        // Thử lần lượt các endpoint & model khả dụng
-        Set<String> triedUrls = new HashSet<>();
-        for (String baseEndpoint : endpointTemplates) {
-            if (triedUrls.contains(baseEndpoint)) continue;
-            triedUrls.add(baseEndpoint);
-
-            String fullUrl = baseEndpoint + "?key=" + apiKey;
-            System.out.println("[GEMINI DEBUG] Invoking Endpoint URL: " + baseEndpoint);
-            log.info("[GEMINI DEBUG] Invoking Endpoint URL: {}", baseEndpoint);
+        for (String url : targetUrls) {
+            String maskedUrl = url.substring(0, url.indexOf("?key=")) + "?key=***";
+            System.out.println("[GEMINI DEBUG] Sending request to URL: " + maskedUrl);
+            log.info("[GEMINI DEBUG] Sending request to URL: {}", maskedUrl);
 
             try {
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
-                headers.set("x-goog-api-key", apiKey);
 
-                // Payload chuẩn Google Generative Language
+                // Body chuẩn Google REST API v1 (đơn giản, tương thích 100%)
                 Map<String, Object> body = new HashMap<>();
-
-                // Contents
-                Map<String, Object> userContent = new HashMap<>();
-                userContent.put("role", "user");
-                userContent.put("parts", Collections.singletonList(Collections.singletonMap("text", prompt.trim())));
-                body.put("contents", Collections.singletonList(userContent));
-
-                // System Instruction
-                Map<String, Object> systemInstruction = new HashMap<>();
-                systemInstruction.put("parts", Collections.singletonList(Collections.singletonMap(
-                        "text",
-                        systemPrompt.trim()
-                )));
-                body.put("systemInstruction", systemInstruction);
+                Map<String, Object> contentMap = new HashMap<>();
+                contentMap.put("parts", Collections.singletonList(Collections.singletonMap("text", combinedPrompt)));
+                body.put("contents", Collections.singletonList(contentMap));
 
                 HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
-                ResponseEntity<String> response = restTemplate.postForEntity(fullUrl, entity, String.class);
+                ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
 
                 if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                     JsonNode root = objectMapper.readTree(response.getBody());
@@ -122,22 +105,21 @@ public class AiServiceImpl implements AiService {
                         JsonNode textNode = candidates.get(0).path("content").path("parts").get(0).path("text");
                         if (!textNode.isMissingNode()) {
                             String reply = textNode.asText();
-                            log.info("[GEMINI SUCCESS] Endpoint [{}] successfully returned reply (length: {})", baseEndpoint, reply.length());
+                            log.info("[GEMINI SUCCESS] URL [{}] responded successfully (length: {})", maskedUrl, reply.length());
                             return reply;
                         }
                     }
                 }
             } catch (HttpStatusCodeException httpEx) {
                 lastErrorMsg = httpEx.getStatusCode() + ": " + httpEx.getResponseBodyAsString();
-                log.warn("[GEMINI RETRY] Endpoint [{}] failed with HTTP {}. Attempting fallback...", baseEndpoint, httpEx.getStatusCode());
-                log.error("[GEMINI ERROR BODY] {}", httpEx.getResponseBodyAsString());
+                log.warn("[GEMINI RETRY] URL [{}] returned HTTP {}: {}", maskedUrl, httpEx.getStatusCode(), httpEx.getResponseBodyAsString());
             } catch (Exception e) {
                 lastErrorMsg = e.getMessage();
-                log.warn("[GEMINI RETRY] Endpoint [{}] encountered exception: {}. Attempting fallback...", baseEndpoint, e.getMessage());
+                log.warn("[GEMINI RETRY] URL [{}] failed: {}", maskedUrl, e.getMessage());
             }
         }
 
         log.error("[GEMINI FINAL ERROR] All Google Gemini endpoints failed. Last error: {}", lastErrorMsg);
-        return "Hiện tại hệ thống Trợ lý AI đang bận hoặc gián đoạn kết nối. Chi tiết phản hồi từ Google: " + lastErrorMsg;
+        return "Hiện tại hệ thống Trợ lý AI đang bận hoặc gián đoạn kết nối. Phản hồi từ Google: " + lastErrorMsg;
     }
 }
