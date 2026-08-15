@@ -61,6 +61,15 @@ public class AiServiceImpl implements AiService {
         return modelName;
     }
 
+    private String maskUrl(String url) {
+        if (url == null || url.isEmpty()) return "";
+        int keyIndex = url.indexOf("key=");
+        if (keyIndex != -1) {
+            return url.substring(0, keyIndex) + "key=***";
+        }
+        return url;
+    }
+
     private String getSystemPrompt() {
         return """
                 Bạn là Trợ lý AI thông minh, thân thiện của mạng xã hội BlogViet (https://anhhoangg.id.vn/).
@@ -184,7 +193,7 @@ public class AiServiceImpl implements AiService {
         String lastErrorMsg = "";
 
         for (String url : targetUrls) {
-            String maskedUrl = url.substring(0, url.indexOf("?key=")) + "?key=***";
+            String maskedUrl = maskUrl(url);
             log.info("[GEMINI DEBUG] Sending request to URL: {}", maskedUrl);
 
             try {
@@ -256,7 +265,7 @@ public class AiServiceImpl implements AiService {
         boolean streamedAny = false;
 
         for (String url : streamUrls) {
-            String maskedUrl = url.substring(0, url.indexOf("?key=")) + "?key=***";
+            String maskedUrl = maskUrl(url);
             log.info("[GEMINI STREAM] Bắt đầu stream tới URL: {}", maskedUrl);
 
             try {
@@ -273,7 +282,7 @@ public class AiServiceImpl implements AiService {
                     try (Stream<String> lines = response.body()) {
                         for (Iterator<String> it = lines.iterator(); it.hasNext(); ) {
                             String line = it.next();
-                            if (line.startsWith("data: ")) {
+                            if (line != null && line.startsWith("data: ") && line.length() > 6) {
                                 String json = line.substring(6).trim();
                                 if (!json.isEmpty() && !json.equals("[DONE]")) {
                                     try {
