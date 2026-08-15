@@ -48,7 +48,97 @@ public class SongServiceImpl implements SongService {
     @Override
     public int syncTrendingCharts() {
         List<Song> trendingCatalog = Arrays.asList(
-                // 1. Top V-Pop & Ballad
+                // 1. Vinahouse & Remix Club Nonstop
+                Song.builder()
+                        .title("Vinahouse Club Night & Bass Boosted")
+                        .artist("DJ Live Mix Nonstop")
+                        .genre("Vinahouse")
+                        .genreColor("bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300")
+                        .coverUrl("https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=600&auto=format&fit=crop&q=80")
+                        .audioUrl("https://streams.ilovemusic.de/iloveradio2.mp3")
+                        .fallbackAudioUrl("https://streams.ilovemusic.de/iloveradio9.mp3")
+                        .durationSeconds(0)
+                        .build(),
+
+                Song.builder()
+                        .title("Cắt Đôi Nỗi Sầu (Vinahouse Remix)")
+                        .artist("Tăng Duy Tân")
+                        .genre("Vinahouse")
+                        .genreColor("bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300")
+                        .coverUrl("https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600&auto=format&fit=crop&q=80")
+                        .audioUrl("https://streams.ilovemusic.de/iloveradio2.mp3")
+                        .fallbackAudioUrl("https://streams.ilovemusic.de/iloveradio9.mp3")
+                        .durationSeconds(0)
+                        .build(),
+
+                Song.builder()
+                        .title("See Tình (Hoàng Thùy Linh Remix)")
+                        .artist("Hoàng Thùy Linh")
+                        .genre("Vinahouse")
+                        .genreColor("bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300")
+                        .coverUrl("https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80")
+                        .audioUrl("https://streams.ilovemusic.de/iloveradio2.mp3")
+                        .fallbackAudioUrl("https://streams.ilovemusic.de/iloveradio9.mp3")
+                        .durationSeconds(0)
+                        .build(),
+
+                Song.builder()
+                        .title("EDM Festival & Nonstop Dance Party")
+                        .artist("Ultra Music Live")
+                        .genre("Vinahouse")
+                        .genreColor("bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300")
+                        .coverUrl("https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=600&auto=format&fit=crop&q=80")
+                        .audioUrl("https://streams.ilovemusic.de/iloveradio9.mp3")
+                        .fallbackAudioUrl("https://streams.ilovemusic.de/iloveradio2.mp3")
+                        .durationSeconds(0)
+                        .build(),
+
+                // 2. Lo-Fi Chill & Focus
+                Song.builder()
+                        .title("Lo-Fi Study & Chill Beats")
+                        .artist("BlogViet Lo-Fi Station")
+                        .genre("Lofi Chill")
+                        .genreColor("bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300")
+                        .coverUrl("https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=600&auto=format&fit=crop&q=80")
+                        .audioUrl("https://streams.ilovemusic.de/iloveradio10.mp3")
+                        .fallbackAudioUrl("https://stream.zeno.fm/f3wvbbqmdg8uv")
+                        .durationSeconds(0)
+                        .build(),
+
+                Song.builder()
+                        .title("Acoustic Guitar & Coffee Melody")
+                        .artist("Acoustic Melody Session")
+                        .genre("Lofi Chill")
+                        .genreColor("bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300")
+                        .coverUrl("https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80")
+                        .audioUrl("https://streams.ilovemusic.de/iloveradio10.mp3")
+                        .fallbackAudioUrl("https://streams.ilovemusic.de/iloveradio1.mp3")
+                        .durationSeconds(0)
+                        .build(),
+
+                Song.builder()
+                        .title("Late Night Lofi Beats & Deep Focus")
+                        .artist("Developer Chill Beats")
+                        .genre("Lofi Chill")
+                        .genreColor("bg-teal-100 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300")
+                        .coverUrl("https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80")
+                        .audioUrl("https://stream.zeno.fm/f3wvbbqmdg8uv")
+                        .fallbackAudioUrl("https://streams.ilovemusic.de/iloveradio10.mp3")
+                        .durationSeconds(0)
+                        .build(),
+
+                Song.builder()
+                        .title("Gaming Beats & Chillhop Level Up")
+                        .artist("Pixel Wave Records")
+                        .genre("Lofi Chill")
+                        .genreColor("bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300")
+                        .coverUrl("https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop&q=80")
+                        .audioUrl("https://streams.ilovemusic.de/iloveradio10.mp3")
+                        .fallbackAudioUrl("https://streams.ilovemusic.de/iloveradio9.mp3")
+                        .durationSeconds(0)
+                        .build(),
+
+                // 3. Top V-Pop & Rap Việt
                 Song.builder()
                         .title("Nơi Này Có Anh")
                         .artist("Sơn Tùng M-TP")
@@ -63,22 +153,11 @@ public class SongServiceImpl implements SongService {
                 Song.builder()
                         .title("Nàng Thơ")
                         .artist("Hoàng Dũng")
-                        .genre("Ballad")
+                        .genre("V-Pop")
                         .genreColor("bg-pink-100 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300")
                         .coverUrl("https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80")
                         .audioUrl("https://streams.ilovemusic.de/iloveradio10.mp3")
                         .fallbackAudioUrl("https://stream.zeno.fm/f3wvbbqmdg8uv")
-                        .durationSeconds(0)
-                        .build(),
-
-                Song.builder()
-                        .title("See Tình (Hoàng Thùy Linh Remix)")
-                        .artist("Hoàng Thùy Linh")
-                        .genre("Remix")
-                        .genreColor("bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300")
-                        .coverUrl("https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=600&auto=format&fit=crop&q=80")
-                        .audioUrl("https://streams.ilovemusic.de/iloveradio2.mp3")
-                        .fallbackAudioUrl("https://streams.ilovemusic.de/iloveradio9.mp3")
                         .durationSeconds(0)
                         .build(),
 
@@ -96,111 +175,11 @@ public class SongServiceImpl implements SongService {
                 Song.builder()
                         .title("Chìm Sâu")
                         .artist("RPT MCK ft. Trung Trần")
-                        .genre("Rap Việt")
+                        .genre("V-Pop")
                         .genreColor("bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300")
                         .coverUrl("https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=600&auto=format&fit=crop&q=80")
                         .audioUrl("https://streams.ilovemusic.de/iloveradio9.mp3")
                         .fallbackAudioUrl("https://streams.ilovemusic.de/iloveradio2.mp3")
-                        .durationSeconds(0)
-                        .build(),
-
-                Song.builder()
-                        .title("Cắt Đôi Nỗi Sầu")
-                        .artist("Tăng Duy Tân")
-                        .genre("Vinahouse")
-                        .genreColor("bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300")
-                        .coverUrl("https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600&auto=format&fit=crop&q=80")
-                        .audioUrl("https://streams.ilovemusic.de/iloveradio2.mp3")
-                        .fallbackAudioUrl("https://streams.ilovemusic.de/iloveradio9.mp3")
-                        .durationSeconds(0)
-                        .build(),
-
-                // 2. Lo-Fi, Chillout & Acoustic
-                Song.builder()
-                        .title("Lo-Fi Study & Chill Beats")
-                        .artist("BlogViet Lo-Fi Station")
-                        .genre("Lofi Chill")
-                        .genreColor("bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300")
-                        .coverUrl("https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=600&auto=format&fit=crop&q=80")
-                        .audioUrl("https://streams.ilovemusic.de/iloveradio10.mp3")
-                        .fallbackAudioUrl("https://stream.zeno.fm/f3wvbbqmdg8uv")
-                        .durationSeconds(0)
-                        .build(),
-
-                Song.builder()
-                        .title("Acoustic Guitar & Coffee Melody")
-                        .artist("Acoustic Melody Session")
-                        .genre("Acoustic")
-                        .genreColor("bg-pink-100 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300")
-                        .coverUrl("https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80")
-                        .audioUrl("https://streams.ilovemusic.de/iloveradio10.mp3")
-                        .fallbackAudioUrl("https://streams.ilovemusic.de/iloveradio1.mp3")
-                        .durationSeconds(0)
-                        .build(),
-
-                Song.builder()
-                        .title("Piano & Gentle Raindrops")
-                        .artist("Peaceful Night Ambient")
-                        .genre("Relaxing")
-                        .genreColor("bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300")
-                        .coverUrl("https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=600&auto=format&fit=crop&q=80")
-                        .audioUrl("https://stream.zeno.fm/f3wvbbqmdg8uv")
-                        .fallbackAudioUrl("https://streams.ilovemusic.de/iloveradio10.mp3")
-                        .durationSeconds(0)
-                        .build(),
-
-                Song.builder()
-                        .title("Warm Coffee Shop Midnight Jazz")
-                        .artist("Midnight Jazz Quartet")
-                        .genre("Jazz")
-                        .genreColor("bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300")
-                        .coverUrl("https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&auto=format&fit=crop&q=80")
-                        .audioUrl("https://streams.ilovemusic.de/iloveradio2.mp3")
-                        .fallbackAudioUrl("https://streams.ilovemusic.de/iloveradio10.mp3")
-                        .durationSeconds(0)
-                        .build(),
-
-                Song.builder()
-                        .title("Gaming Beats & Chillhop Level Up")
-                        .artist("Pixel Wave Records")
-                        .genre("Chillhop")
-                        .genreColor("bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300")
-                        .coverUrl("https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop&q=80")
-                        .audioUrl("https://streams.ilovemusic.de/iloveradio10.mp3")
-                        .fallbackAudioUrl("https://streams.ilovemusic.de/iloveradio9.mp3")
-                        .durationSeconds(0)
-                        .build(),
-
-                Song.builder()
-                        .title("Deep Focus & Coding Flow")
-                        .artist("Developer Vibes")
-                        .genre("Focus")
-                        .genreColor("bg-teal-100 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300")
-                        .coverUrl("https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80")
-                        .audioUrl("https://stream.zeno.fm/f3wvbbqmdg8uv")
-                        .fallbackAudioUrl("https://streams.ilovemusic.de/iloveradio10.mp3")
-                        .durationSeconds(0)
-                        .build(),
-
-                Song.builder()
-                        .title("Cyberpunk 80s Synthwave Night")
-                        .artist("Neon Future Beats")
-                        .genre("Synthwave")
-                        .genreColor("bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300")
-                        .coverUrl("https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=600&auto=format&fit=crop&q=80")
-                        .audioUrl("https://streams.ilovemusic.de/iloveradio9.mp3")
-                        .fallbackAudioUrl("https://streams.ilovemusic.de/iloveradio2.mp3")
-                        .durationSeconds(0)
-                        .build(),
-
-                Song.builder()
-                        .title("Thiền Định & Sóng Não An Nhiên")
-                        .artist("Mindfulness Master")
-                        .genre("Zen Ambient")
-                        .genreColor("bg-lime-100 text-lime-700 dark:bg-lime-950/40 dark:text-lime-300")
-                        .coverUrl("https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600&auto=format&fit=crop&q=80")
-                        .audioUrl("https://stream.zeno.fm/f3wvbbqmdg8uv")
-                        .fallbackAudioUrl("https://streams.ilovemusic.de/iloveradio10.mp3")
                         .durationSeconds(0)
                         .build()
         );
