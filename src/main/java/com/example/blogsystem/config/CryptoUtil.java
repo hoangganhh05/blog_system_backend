@@ -13,17 +13,25 @@ import java.util.Base64;
 @Slf4j
 public class CryptoUtil {
 
-    // 256-bit Secret Key (32 bytes) and 128-bit IV (16 bytes)
-    private static final String SECRET_KEY = "BlogVietSecureKey2026AES256Secret";
-    private static final String INIT_VECTOR = "BlogVietInitVec1";
+    // Exactly 32 bytes (256 bits) for AES-256 and exactly 16 bytes (128 bits) for IV
+    private static final String SECRET_KEY = "BlogViet_Secure_AES256_Key_2026_"; // 32 chars
+    private static final String INIT_VECTOR = "BlogVietInitVec1"; // 16 chars
     private static final String ALGORITHM = "AES/CBC/PKCS5Padding";
 
     private final SecretKeySpec keySpec;
     private final IvParameterSpec ivSpec;
 
     public CryptoUtil() {
-        this.keySpec = new SecretKeySpec(SECRET_KEY.getBytes(StandardCharsets.UTF_8), "AES");
-        this.ivSpec = new IvParameterSpec(INIT_VECTOR.getBytes(StandardCharsets.UTF_8));
+        byte[] keyBytes = new byte[32];
+        byte[] rawKey = SECRET_KEY.getBytes(StandardCharsets.UTF_8);
+        System.arraycopy(rawKey, 0, keyBytes, 0, Math.min(rawKey.length, 32));
+
+        byte[] ivBytes = new byte[16];
+        byte[] rawIv = INIT_VECTOR.getBytes(StandardCharsets.UTF_8);
+        System.arraycopy(rawIv, 0, ivBytes, 0, Math.min(rawIv.length, 16));
+
+        this.keySpec = new SecretKeySpec(keyBytes, "AES");
+        this.ivSpec = new IvParameterSpec(ivBytes);
     }
 
     /**
@@ -58,7 +66,7 @@ public class CryptoUtil {
             byte[] original = cipher.doFinal(decoded);
             return new String(original, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            log.warn("[CRYPTO WARNING] Không thể giải mã chuỗi (có thể là dữ liệu thường chưa mã hóa): {}", e.getMessage());
+            log.warn("[CRYPTO WARNING] Không thể giải mã chuỗi: {}", e.getMessage());
             return cipherText;
         }
     }
