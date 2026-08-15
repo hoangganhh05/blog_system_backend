@@ -125,7 +125,9 @@ public class UserImpl implements UserService {
             throw new RuntimeException("Tên đăng nhập hoặc mật khẩu không đúng!");
         }
 
-        return user;
+        user.setIsOnline(true);
+        user.setLastActiveAt(LocalDateTime.now());
+        return userRepository.save(user);
     }
 
     @Override

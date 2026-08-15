@@ -25,4 +25,6 @@ public class UserProfileDTO {
     private Boolean showFriendsList;
     private String friendListPrivacy;
     private String followerListPrivacy;
+    private Boolean isOnline;
+    private java.time.LocalDateTime lastActiveAt;
 }

@@ -47,6 +47,8 @@ public class User {
     private Boolean showFriendsList = true;
     private String friendListPrivacy = "PUBLIC"; // "PUBLIC", "PRIVATE"
     private String followerListPrivacy = "PUBLIC"; // "PUBLIC", "PRIVATE"
+    private Boolean isOnline = false;
+    private LocalDateTime lastActiveAt;
 
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

@@ -15,4 +15,7 @@ public class UserPublicDTO {
     private String avatarColor;
     private String avatarUrl;
     private String bannerUrl;
+    private Boolean isOnline;
+    private java.time.LocalDateTime lastActiveAt;
+    private Boolean showActiveStatus;
 }

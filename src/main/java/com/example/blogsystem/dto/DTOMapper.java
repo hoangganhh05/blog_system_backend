@@ -55,6 +55,12 @@ public class DTOMapper {
         dto.setAvatarUrl(user.getAvatarUrl());
         dto.setBannerUrl(user.getBannerUrl());
 
+        boolean isRecentActive = Boolean.TRUE.equals(user.getIsOnline()) ||
+                (user.getLastActiveAt() != null && user.getLastActiveAt().isAfter(java.time.LocalDateTime.now().minusMinutes(5)));
+        dto.setIsOnline(isRecentActive);
+        dto.setLastActiveAt(user.getLastActiveAt());
+        dto.setShowActiveStatus(user.getShowActiveStatus());
+
         return dto;
     }
 
@@ -79,6 +85,11 @@ public class DTOMapper {
         dto.setShowFriendsList(user.getShowFriendsList());
         dto.setFriendListPrivacy(user.getFriendListPrivacy());
         dto.setFollowerListPrivacy(user.getFollowerListPrivacy());
+
+        boolean isRecentActive = Boolean.TRUE.equals(user.getIsOnline()) ||
+                (user.getLastActiveAt() != null && user.getLastActiveAt().isAfter(java.time.LocalDateTime.now().minusMinutes(5)));
+        dto.setIsOnline(isRecentActive);
+        dto.setLastActiveAt(user.getLastActiveAt());
 
         return dto;
     }

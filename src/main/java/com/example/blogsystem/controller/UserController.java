@@ -10,16 +10,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping({"/users", "/api/users", "/v1/users", "/api/v1/users"})
 public class UserController {
 
     private final UserService userService;
+    private final com.example.blogsystem.repository.UserRepository userRepository;
     private final CurrentUser currentUser;
 
-    public UserController(UserService userService, CurrentUser currentUser) {
+    public UserController(UserService userService, com.example.blogsystem.repository.UserRepository userRepository, CurrentUser currentUser) {
         this.userService = userService;
+        this.userRepository = userRepository;
         this.currentUser = currentUser;
     }
 
@@ -110,5 +113,39 @@ public class UserController {
         currentUser.requireOwnerOrAdmin(id);
         Map<String, Object> stats = userService.getUserStats(id);
         return ResponseEntity.ok(stats);
+    }
+
+    // Heartbeat cập nhật trạng thái online: POST /users/heartbeat
+    @PostMapping("/heartbeat")
+    public ResponseEntity<Map<String, Object>> heartbeat() {
+        Long myId = currentUser.id();
+        if (myId != null) {
+            userRepository.findById(myId).ifPresent(u -> {
+                u.setIsOnline(true);
+                u.setLastActiveAt(java.time.LocalDateTime.now());
+                userRepository.save(u);
+            });
+        }
+        Map<String, Object> res = new HashMap<>();
+        res.put("status", "OK");
+        res.put("isOnline", true);
+        res.put("timestamp", System.currentTimeMillis());
+        return ResponseEntity.ok(res);
+    }
+
+    // Đánh dấu offline khi thoát/đăng xuất: POST /users/offline
+    @PostMapping("/offline")
+    public ResponseEntity<Map<String, Object>> setOffline() {
+        Long myId = currentUser.id();
+        if (myId != null) {
+            userRepository.findById(myId).ifPresent(u -> {
+                u.setIsOnline(false);
+                u.setLastActiveAt(java.time.LocalDateTime.now());
+                userRepository.save(u);
+            });
+        }
+        Map<String, Object> res = new HashMap<>();
+        res.put("status", "OFFLINE");
+        return ResponseEntity.ok(res);
     }
 }
