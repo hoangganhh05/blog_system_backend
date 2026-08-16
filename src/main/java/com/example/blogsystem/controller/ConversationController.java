@@ -1,6 +1,7 @@
 package com.example.blogsystem.controller;
 
 import com.example.blogsystem.config.CurrentUser;
+import com.example.blogsystem.config.WebSocketCryptoConfig;
 import com.example.blogsystem.entity.Conversation;
 import com.example.blogsystem.service.ConversationService;
 import lombok.extern.slf4j.Slf4j;
@@ -17,10 +18,15 @@ public class ConversationController {
 
     private final ConversationService conversationService;
     private final CurrentUser currentUser;
+    private final WebSocketCryptoConfig.SecureRealtimeHandler realtimeHandler;
 
-    public ConversationController(ConversationService conversationService, CurrentUser currentUser) {
+    public ConversationController(
+            ConversationService conversationService,
+            CurrentUser currentUser,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) WebSocketCryptoConfig.SecureRealtimeHandler realtimeHandler) {
         this.conversationService = conversationService;
         this.currentUser = currentUser;
+        this.realtimeHandler = realtimeHandler;
     }
 
     @GetMapping("/with-user/{targetUserId}")
@@ -52,6 +58,19 @@ public class ConversationController {
             String theme = body.get("theme");
             Conversation conv = conversationService.updateTheme(id, theme, callerId);
 
+            // Broadcast sự kiện đổi Theme Real-time qua WebSocket
+            if (realtimeHandler != null) {
+                try {
+                    String wsPayload = String.format(
+                            "{\"type\":\"THEME_UPDATED\",\"conversationId\":%d,\"user1Id\":%d,\"user2Id\":%d,\"theme\":\"%s\",\"updatedBy\":%d,\"timestamp\":%d}",
+                            conv.getId(), conv.getUser1().getId(), conv.getUser2().getId(), conv.getTheme(), callerId, System.currentTimeMillis()
+                    );
+                    realtimeHandler.broadcastEncryptedMessage(wsPayload);
+                } catch (Exception wsEx) {
+                    log.warn("Không thể broadcast theme event qua WebSocket: {}", wsEx.getMessage());
+                }
+            }
+
             Map<String, Object> resp = new HashMap<>();
             resp.put("id", conv.getId());
             resp.put("theme", conv.getTheme());
@@ -74,6 +93,19 @@ public class ConversationController {
             Long callerId = currentUser.id();
             String theme = body.get("theme");
             Conversation conv = conversationService.updateThemeBetweenUsers(callerId, targetUserId, theme, callerId);
+
+            // Broadcast sự kiện đổi Theme Real-time qua WebSocket
+            if (realtimeHandler != null) {
+                try {
+                    String wsPayload = String.format(
+                            "{\"type\":\"THEME_UPDATED\",\"conversationId\":%d,\"user1Id\":%d,\"user2Id\":%d,\"theme\":\"%s\",\"updatedBy\":%d,\"timestamp\":%d}",
+                            conv.getId(), conv.getUser1().getId(), conv.getUser2().getId(), conv.getTheme(), callerId, System.currentTimeMillis()
+                    );
+                    realtimeHandler.broadcastEncryptedMessage(wsPayload);
+                } catch (Exception wsEx) {
+                    log.warn("Không thể broadcast theme event qua WebSocket: {}", wsEx.getMessage());
+                }
+            }
 
             Map<String, Object> resp = new HashMap<>();
             resp.put("id", conv.getId());

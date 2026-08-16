@@ -23,15 +23,24 @@ public class WebSocketCryptoConfig implements WebSocketConfigurer {
 
     private final CryptoUtil cryptoUtil;
     private final ObjectMapper objectMapper;
+    private SecureRealtimeHandler handler;
 
     public WebSocketCryptoConfig(CryptoUtil cryptoUtil, @org.springframework.beans.factory.annotation.Autowired(required = false) ObjectMapper objectMapper) {
         this.cryptoUtil = cryptoUtil;
         this.objectMapper = (objectMapper != null) ? objectMapper : new ObjectMapper();
     }
 
+    @org.springframework.context.annotation.Bean
+    public SecureRealtimeHandler secureRealtimeHandler() {
+        if (this.handler == null) {
+            this.handler = new SecureRealtimeHandler(cryptoUtil, objectMapper);
+        }
+        return this.handler;
+    }
+
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(new SecureRealtimeHandler(cryptoUtil, objectMapper), "/ws/realtime", "/api/ws/realtime", "/ws/chat")
+        registry.addHandler(secureRealtimeHandler(), "/ws/realtime", "/api/ws/realtime", "/ws/chat")
                 .setAllowedOrigins("*");
     }
 
