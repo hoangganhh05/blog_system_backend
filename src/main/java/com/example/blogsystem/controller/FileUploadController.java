@@ -69,4 +69,45 @@ public class FileUploadController {
             return ResponseEntity.internalServerError().body(err);
         }
     }
+
+    @PostMapping({"/multiple", "/batch"})
+    public ResponseEntity<?> uploadMultipleFiles(
+            @RequestParam(value = "files", required = false) java.util.List<MultipartFile> files,
+            @RequestParam(value = "images", required = false) java.util.List<MultipartFile> images) {
+        java.util.List<MultipartFile> targetFiles = files != null ? files : images;
+        if (targetFiles == null || targetFiles.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Danh sách tệp không được để trống!"));
+        }
+
+        try {
+            Files.createDirectories(UPLOAD_DIR);
+            java.util.List<String> urls = new java.util.ArrayList<>();
+            java.util.List<String> filenames = new java.util.ArrayList<>();
+
+            for (MultipartFile file : targetFiles) {
+                if (file.isEmpty() || file.getSize() > MAX_FILE_SIZE || !ALLOWED_TYPES.contains(file.getContentType())) {
+                    continue;
+                }
+                String extension = switch (file.getContentType()) {
+                    case MediaType.IMAGE_JPEG_VALUE -> ".jpg";
+                    case MediaType.IMAGE_PNG_VALUE -> ".png";
+                    case MediaType.IMAGE_GIF_VALUE -> ".gif";
+                    default -> ".webp";
+                };
+                String newFilename = UUID.randomUUID().toString() + extension;
+                Path filepath = UPLOAD_DIR.resolve(newFilename).normalize();
+                if (!filepath.startsWith(UPLOAD_DIR)) throw new IOException("Invalid upload path");
+                Files.copy(file.getInputStream(), filepath);
+                urls.add("/uploads/" + newFilename);
+                filenames.add(newFilename);
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("urls", urls);
+            response.put("filenames", filenames);
+            return ResponseEntity.ok(response);
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", "Lỗi tải tệp: " + e.getMessage()));
+        }
+    }
 }

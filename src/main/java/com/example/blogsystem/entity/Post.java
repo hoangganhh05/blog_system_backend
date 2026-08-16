@@ -29,6 +29,27 @@ public class Post {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "post_images", joinColumns = @JoinColumn(name = "post_id"))
+    @Column(name = "image_url")
+    private List<String> imageUrls = new java.util.ArrayList<>();
+
+    public List<String> getImages() {
+        return imageUrls;
+    }
+
+    public void setImages(List<String> images) {
+        if (images != null) {
+            this.imageUrls = images;
+        }
+    }
+
+    public void setMediaUrls(List<String> urls) {
+        if (urls != null) {
+            this.imageUrls = urls;
+        }
+    }
+
     // Số lượt xem — tự động +1 mỗi khi GET /posts/{id}
     private Integer viewCount = 0;
 

@@ -22,6 +22,14 @@ public class DTOMapper {
         dto.setTitle(post.getTitle());
         dto.setContent(post.getContent());
         dto.setThumbNail(post.getThumbNail());
+        java.util.List<String> imgs = new java.util.ArrayList<>();
+        if (post.getImageUrls() != null && !post.getImageUrls().isEmpty()) {
+            imgs.addAll(post.getImageUrls());
+        } else if (post.getThumbNail() != null && !post.getThumbNail().isBlank()) {
+            imgs.add(post.getThumbNail());
+        }
+        dto.setImages(imgs);
+        dto.setImageUrls(imgs);
         dto.setStatus(post.getStatus());
         dto.setBgColor(post.getBgColor());
         dto.setCreatedAt(post.getCreatedAt());

@@ -14,6 +14,8 @@ public class PostDTO {
     private String title;
     private String content;
     private String thumbNail;
+    private java.util.List<String> images = new java.util.ArrayList<>();
+    private java.util.List<String> imageUrls = new java.util.ArrayList<>();
     private String status;
     private String bgColor;
     private LocalDateTime createdAt;

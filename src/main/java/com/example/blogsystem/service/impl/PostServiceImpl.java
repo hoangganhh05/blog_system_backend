@@ -106,6 +106,14 @@ public class PostServiceImpl implements PostService {
                 post.setCategory(null);
             }
 
+            if (post.getImageUrls() != null && !post.getImageUrls().isEmpty()) {
+                if (post.getThumbNail() == null || post.getThumbNail().isBlank()) {
+                    post.setThumbNail(post.getImageUrls().get(0));
+                }
+            } else if (post.getThumbNail() != null && !post.getThumbNail().isBlank()) {
+                post.setImageUrls(new java.util.ArrayList<>(java.util.List.of(post.getThumbNail())));
+            }
+
             post.setUser(currentUser);
 
             return postRepository.save(post);
@@ -127,8 +135,16 @@ public class PostServiceImpl implements PostService {
         if (post.getContent() != null) {
             existingPost.setContent(post.getContent());
         }
-        if (post.getThumbNail() != null) {
+        if (post.getImageUrls() != null && !post.getImageUrls().isEmpty()) {
+            existingPost.setImageUrls(post.getImageUrls());
+            existingPost.setThumbNail(post.getImageUrls().get(0));
+        } else if (post.getThumbNail() != null) {
             existingPost.setThumbNail(post.getThumbNail());
+            if (post.getThumbNail().isBlank()) {
+                existingPost.setImageUrls(new java.util.ArrayList<>());
+            } else {
+                existingPost.setImageUrls(new java.util.ArrayList<>(java.util.List.of(post.getThumbNail())));
+            }
         }
         if (post.getStatus() != null) {
             existingPost.setStatus(post.getStatus());
