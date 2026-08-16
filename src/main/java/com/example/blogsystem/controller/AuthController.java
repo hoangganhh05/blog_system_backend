@@ -8,6 +8,7 @@ import com.example.blogsystem.entity.User;
 import com.example.blogsystem.repository.UserRepository;
 import com.example.blogsystem.service.UserService;
 import com.example.blogsystem.service.PasswordResetMailService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,7 +42,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         try {
             if (request.getUsername() == null || request.getUsername().isBlank()) {
                 return ResponseEntity.badRequest().body("Tên đăng nhập không được để trống!");
@@ -91,7 +92,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         try {
             User user = userService.login(
                     request.getUsername(),
