@@ -29,6 +29,18 @@ public class ConversationController {
         this.realtimeHandler = realtimeHandler;
     }
 
+    @GetMapping("/recent")
+    public ResponseEntity<java.util.List<Map<String, Object>>> getRecentConversations() {
+        try {
+            Long callerId = currentUser.id();
+            java.util.List<Map<String, Object>> recentList = conversationService.getRecentConversations(callerId);
+            return ResponseEntity.ok(recentList);
+        } catch (Exception e) {
+            log.error("Lỗi lấy danh sách hội thoại gần đây cho user {}: ", currentUser.id(), e);
+            throw e;
+        }
+    }
+
     @GetMapping("/with-user/{targetUserId}")
     public ResponseEntity<Map<String, Object>> getConversationWithUser(@PathVariable Long targetUserId) {
         try {

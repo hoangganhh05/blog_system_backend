@@ -24,4 +24,8 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
 
     // Lấy tất cả tin nhắn chưa đọc gửi cho 1 người nhận
     List<ChatMessage> findBySenderIdAndReceiverIdAndIsReadFalse(Long senderId, Long receiverId);
+
+    // Lấy danh sách tất cả tin nhắn liên quan đến 1 user (cả gửi và nhận) có nạp sẵn thông tin sender & receiver
+    @Query("SELECT m FROM ChatMessage m LEFT JOIN FETCH m.sender LEFT JOIN FETCH m.receiver WHERE m.sender.id = :userId OR m.receiver.id = :userId ORDER BY m.createdAt DESC")
+    List<ChatMessage> findAllByUserOrderByCreatedAtDesc(@Param("userId") Long userId);
 }
