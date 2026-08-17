@@ -13,6 +13,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
 @Service
 public class BookmarkServiceImpl implements BookmarkService {
 
@@ -34,9 +37,9 @@ public class BookmarkServiceImpl implements BookmarkService {
             return false; // Removed bookmark
         } else {
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
             Post post = postRepository.findById(postId)
-                    .orElseThrow(() -> new RuntimeException("Post not found"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
 
             Bookmark bookmark = new Bookmark();
             bookmark.setUser(user);
@@ -49,7 +52,7 @@ public class BookmarkServiceImpl implements BookmarkService {
 
     @Override
     public boolean isBookmarkedByUser(Long userId, Long postId) {
-        if (userId == null) return false;
+        if (userId == null || postId == null) return false;
         return bookmarkRepository.existsByUserIdAndPostId(userId, postId);
     }
 

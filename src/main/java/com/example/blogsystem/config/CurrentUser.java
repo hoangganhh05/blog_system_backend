@@ -21,6 +21,18 @@ public class CurrentUser {
         }
     }
 
+    public Long idOrNull() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())) {
+            return null;
+        }
+        try {
+            return Long.valueOf(authentication.getName());
+        } catch (NumberFormatException exception) {
+            return null;
+        }
+    }
+
     public boolean isAdmin() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return authentication != null && authentication.getAuthorities().stream()

@@ -62,7 +62,8 @@ public class FollowController {
     // Kiểm tra trạng thái theo dõi: GET /follows/status?targetUserId=...
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> getStatus(@RequestParam Long targetUserId) {
-        boolean isFollowing = followService.isFollowing(currentUser.id(), targetUserId);
+        Long currentId = currentUser.idOrNull();
+        boolean isFollowing = currentId != null && followService.isFollowing(currentId, targetUserId);
         Map<String, Object> result = new HashMap<>();
         result.put("isFollowing", isFollowing);
         return ResponseEntity.ok(result);

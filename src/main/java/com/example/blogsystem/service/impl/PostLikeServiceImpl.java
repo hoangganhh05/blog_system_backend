@@ -50,9 +50,9 @@ public class PostLikeServiceImpl implements PostLikeService {
         } else {
             // Thả tim mới (Like / Heart)
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "User not found"));
             Post post = postRepository.findById(postId)
-                    .orElseThrow(() -> new RuntimeException("Post not found"));
+                    .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Post not found"));
 
             PostLike postLike = PostLike.builder()
                     .user(user)
@@ -87,18 +87,19 @@ public class PostLikeServiceImpl implements PostLikeService {
 
     @Override
     public long getLikeCount(Long postId) {
+        if (postId == null) return 0L;
         return postLikeRepository.countByPostId(postId);
     }
 
     @Override
     public boolean isLikedByUser(Long userId, Long postId) {
-        if (userId == null) return false;
+        if (userId == null || postId == null) return false;
         return postLikeRepository.existsByUserIdAndPostId(userId, postId);
     }
 
     @Override
     public String getUserReaction(Long userId, Long postId) {
-        if (userId == null) return null;
+        if (userId == null || postId == null) return null;
         return postLikeRepository.existsByUserIdAndPostId(userId, postId) ? "LIKE" : null;
     }
 

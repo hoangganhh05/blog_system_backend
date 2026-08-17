@@ -4,8 +4,11 @@ import com.example.blogsystem.dto.UserReactionDTO;
 import com.example.blogsystem.dto.DTOMapper;
 import com.example.blogsystem.service.PostLikeService;
 import com.example.blogsystem.config.CurrentUser;
+import com.example.blogsystem.repository.PostRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -17,10 +20,12 @@ import java.util.stream.Collectors;
 public class PostLikeController {
 
     private final PostLikeService postLikeService;
+    private final PostRepository postRepository;
     private final CurrentUser currentUser;
 
-    public PostLikeController(PostLikeService postLikeService, CurrentUser currentUser) {
+    public PostLikeController(PostLikeService postLikeService, PostRepository postRepository, CurrentUser currentUser) {
         this.postLikeService = postLikeService;
+        this.postRepository = postRepository;
         this.currentUser = currentUser;
     }
 
@@ -28,12 +33,21 @@ public class PostLikeController {
     public ResponseEntity<Map<String, Object>> toggleLike(
             @PathVariable Long postId,
             @RequestParam(required = false, defaultValue = "LIKE") String type) {
+        if (postId == null || !postRepository.existsById(postId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Bài viết không tồn tại");
+        }
         Map<String, Object> response = postLikeService.toggleReaction(currentUser.id(), postId, type);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{postId}/likes/count")
     public ResponseEntity<Map<String, Object>> getLikeCount(@PathVariable Long postId) {
+        if (postId == null || !postRepository.existsById(postId)) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("count", 0L);
+            response.put("reactionsSummary", Map.of("LIKE", 0L));
+            return ResponseEntity.ok(response);
+        }
         long count = postLikeService.getLikeCount(postId);
         Map<String, Object> response = new HashMap<>();
         response.put("count", count);
@@ -44,14 +58,24 @@ public class PostLikeController {
     @GetMapping("/{postId}/likes/check")
     public ResponseEntity<Map<String, Object>> checkLiked(
             @PathVariable Long postId) {
-        Long userId = currentUser.id();
-        boolean liked = postLikeService.isLikedByUser(userId, postId);
-        String userReaction = postLikeService.getUserReaction(userId, postId);
+        if (postId == null || !postRepository.existsById(postId)) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("liked", false);
+            response.put("isLiked", false);
+            response.put("userReaction", null);
+            response.put("count", 0L);
+            response.put("reactionsSummary", Map.of("LIKE", 0L));
+            return ResponseEntity.ok(response);
+        }
+        Long userId = currentUser.idOrNull();
+        boolean liked = userId != null && postLikeService.isLikedByUser(userId, postId);
+        String userReaction = userId != null ? postLikeService.getUserReaction(userId, postId) : null;
         long count = postLikeService.getLikeCount(postId);
         Map<String, Long> summary = postLikeService.getReactionsSummary(postId);
 
         Map<String, Object> response = new HashMap<>();
         response.put("liked", liked);
+        response.put("isLiked", liked);
         response.put("userReaction", userReaction);
         response.put("count", count);
         response.put("reactionsSummary", summary);
@@ -60,6 +84,9 @@ public class PostLikeController {
 
     @GetMapping("/{postId}/likes/list")
     public ResponseEntity<List<UserReactionDTO>> getReactionsList(@PathVariable Long postId) {
+        if (postId == null || !postRepository.existsById(postId)) {
+            return ResponseEntity.ok(List.of());
+        }
         List<Map<String, Object>> reactionsList = postLikeService.getReactionsList(postId);
         List<UserReactionDTO> userReactionDTOs = reactionsList.stream()
                 .map(map -> {

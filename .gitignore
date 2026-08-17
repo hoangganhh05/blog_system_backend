@@ -37,3 +37,17 @@ build/
 .env
 .env.*
 .env.local
+
+### Logs & temp files ###
+*.log
+npm-debug.log*
+yarn-error.log*
+hs_err_pid*
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db
+
+### Build output ###
+/dist/
+/out/
