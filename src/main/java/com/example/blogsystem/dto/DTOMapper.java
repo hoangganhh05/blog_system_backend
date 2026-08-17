@@ -173,6 +173,7 @@ public class DTOMapper {
         dto.setContent(comment.getContent());
         dto.setCreatedAt(comment.getCreatedAt());
         dto.setUpdatedAt(comment.getUpdatedAt());
+        dto.setImageIndex(comment.getImageIndex());
 
         if (comment.getPost() != null) {
             dto.setPostId(comment.getPost().getId());

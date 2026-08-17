@@ -8,7 +8,12 @@ import com.example.blogsystem.entity.User;
 import com.example.blogsystem.repository.UserRepository;
 import com.example.blogsystem.service.UserService;
 import com.example.blogsystem.service.PasswordResetMailService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -85,7 +90,16 @@ public class AuthController {
                     savedUser.getRole()
             );
 
-            return ResponseEntity.ok(response);
+            ResponseCookie jwtCookie = ResponseCookie.from("jwt", token)
+                    .httpOnly(true)
+                    .maxAge(3600)
+                    .path("/")
+                    .sameSite("Lax")
+                    .build();
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                    .body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Đăng ký thất bại: " + e.getMessage());
         }
@@ -103,13 +117,25 @@ public class AuthController {
                     user.getUsername(),
                     user.getRole()
             );
-            return ResponseEntity.ok(new AuthResponse(
+
+            AuthResponse response = new AuthResponse(
                     token,
                     user.getId(),
                     user.getUsername(),
                     user.getFullName(),
                     user.getRole()
-            ));
+            );
+
+            ResponseCookie jwtCookie = ResponseCookie.from("jwt", token)
+                    .httpOnly(true)
+                    .maxAge(3600)
+                    .path("/")
+                    .sameSite("Lax")
+                    .build();
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                    .body(response);
         } catch (RuntimeException e) {
             return ResponseEntity.status(401).body(e.getMessage());
         }
@@ -200,5 +226,19 @@ public class AuthController {
         } catch (RuntimeException e) {
             return ResponseEntity.status(400).body(e.getMessage());
         }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        ResponseCookie jwtCookie = ResponseCookie.from("jwt", "")
+                .httpOnly(true)
+                .maxAge(0)
+                .path("/")
+                .sameSite("Lax")
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                .body(Map.of("message", "Đăng xuất thành công!"));
     }
 }

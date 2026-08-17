@@ -15,5 +15,6 @@ public class CommentDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Long postId;
+    private Integer imageIndex;
     private UserPublicDTO user;
 }

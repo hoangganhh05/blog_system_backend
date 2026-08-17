@@ -2,6 +2,7 @@ package com.example.blogsystem.config;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -13,6 +14,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 
 @Component
@@ -71,19 +73,28 @@ public class JwtFilter extends OncePerRequestFilter {
 
         boolean publicRequest = isPublicPath(path, method);
 
-        // Bước 1: Không có token
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        // Bước 1: Lấy token từ Header hoặc Cookie
+        String token = null;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7).trim();
+        } else if (request.getCookies() != null) {
+            token = Arrays.stream(request.getCookies())
+                    .filter(c -> "jwt".equals(c.getName()))
+                    .map(Cookie::getValue)
+                    .filter(value -> value != null && !value.isBlank())
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        // Bước 2: Không có token
+        if (token == null) {
             if (!publicRequest) {
-                // Ngắt ngay lập tức đối với API cần quyền nếu thiếu Token, không truy vấn DB
                 writeUnauthorizedResponse(response, "Yêu cầu xác thực tài khoản (Token không được cung cấp)");
                 return;
             }
             filterChain.doFilter(request, response);
             return;
         }
-
-        // Bước 2: Có header Authorization -> Tách lấy token
-        String token = authHeader.substring(7).trim();
 
         // Bước 3: Kiểm tra token, nếu hết hạn hoặc không hợp lệ -> ngắt ngay lập tức (401)
         if (!jwtUtil.isTokenValid(token)) {

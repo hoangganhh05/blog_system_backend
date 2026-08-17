@@ -28,6 +28,9 @@ public class Comment {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "image_index")
+    private Integer imageIndex;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
