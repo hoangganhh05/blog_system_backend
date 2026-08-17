@@ -31,8 +31,8 @@ public class CorsConfig {
         // Cho phép các phương thức HTTP cần thiết
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
 
-        // Cho phép các Headers được phép truyền lên
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
+        // Cho phép tất cả Headers (bao gồm x-encrypted, Authorization, Content-Type, ...)
+        config.setAllowedHeaders(List.of("*"));
 
         // Cho phép credentials (cookie, JWT headers)
         config.setAllowCredentials(true);
