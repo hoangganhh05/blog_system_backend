@@ -8,6 +8,7 @@ import com.example.blogsystem.repository.PostRepository;
 import com.example.blogsystem.repository.UserRepository;
 import com.example.blogsystem.service.NotificationService;
 import com.example.blogsystem.service.PostLikeService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class PostLikeServiceImpl implements PostLikeService {
 
@@ -87,26 +89,46 @@ public class PostLikeServiceImpl implements PostLikeService {
 
     @Override
     public long getLikeCount(Long postId) {
-        if (postId == null) return 0L;
-        return postLikeRepository.countByPostId(postId);
+        try {
+            if (postId == null) return 0L;
+            return postLikeRepository.countByPostId(postId);
+        } catch (Exception e) {
+            log.error("[getLikeCount] Lỗi đếm like. postId={}", postId, e);
+            return 0L;
+        }
     }
 
     @Override
     public boolean isLikedByUser(Long userId, Long postId) {
-        if (userId == null || postId == null) return false;
-        return postLikeRepository.existsByUserIdAndPostId(userId, postId);
+        try {
+            if (userId == null || postId == null) return false;
+            return postLikeRepository.existsByUserIdAndPostId(userId, postId);
+        } catch (Exception e) {
+            log.error("[isLikedByUser] Lỗi kiểm tra like. userId={} postId={}", userId, postId, e);
+            return false;
+        }
     }
 
     @Override
     public String getUserReaction(Long userId, Long postId) {
-        if (userId == null || postId == null) return null;
-        return postLikeRepository.existsByUserIdAndPostId(userId, postId) ? "LIKE" : null;
+        try {
+            if (userId == null || postId == null) return null;
+            return postLikeRepository.existsByUserIdAndPostId(userId, postId) ? "LIKE" : null;
+        } catch (Exception e) {
+            log.error("[getUserReaction] Lỗi lấy reaction. userId={} postId={}", userId, postId, e);
+            return null;
+        }
     }
 
     @Override
     public Map<String, Long> getReactionsSummary(Long postId) {
-        long count = getLikeCount(postId);
-        return Map.of("LIKE", count);
+        try {
+            long count = getLikeCount(postId);
+            return Map.of("LIKE", count);
+        } catch (Exception e) {
+            log.error("[getReactionsSummary] Lỗi lấy summary. postId={}", postId, e);
+            return Map.of("LIKE", 0L);
+        }
     }
 
     @Override

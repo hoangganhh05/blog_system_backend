@@ -7,6 +7,7 @@ import com.example.blogsystem.repository.BookmarkRepository;
 import com.example.blogsystem.repository.PostRepository;
 import com.example.blogsystem.repository.UserRepository;
 import com.example.blogsystem.service.BookmarkService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -16,6 +17,7 @@ import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+@Slf4j
 @Service
 public class BookmarkServiceImpl implements BookmarkService {
 
@@ -52,8 +54,13 @@ public class BookmarkServiceImpl implements BookmarkService {
 
     @Override
     public boolean isBookmarkedByUser(Long userId, Long postId) {
-        if (userId == null || postId == null) return false;
-        return bookmarkRepository.existsByUserIdAndPostId(userId, postId);
+        try {
+            if (userId == null || postId == null) return false;
+            return bookmarkRepository.existsByUserIdAndPostId(userId, postId);
+        } catch (Exception e) {
+            log.error("[isBookmarkedByUser] Lỗi kiểm tra bookmark. userId={} postId={}", userId, postId, e);
+            return false;
+        }
     }
 
     @Override

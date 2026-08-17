@@ -6,6 +6,7 @@ import com.example.blogsystem.entity.Bookmark;
 import com.example.blogsystem.config.CurrentUser;
 import com.example.blogsystem.service.BookmarkService;
 import com.example.blogsystem.repository.PostRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 public class BookmarkController {
 
@@ -29,7 +31,7 @@ public class BookmarkController {
         this.currentUser = currentUser;
     }
 
-    @PostMapping("/posts/{postId}/bookmark")
+    @PostMapping({"/posts/{postId}/bookmark", "/api/posts/{postId}/bookmark", "/v1/posts/{postId}/bookmark", "/api/v1/posts/{postId}/bookmark"})
     public ResponseEntity<Map<String, Object>> toggleBookmark(
             @PathVariable Long postId) {
         if (postId == null || !postRepository.existsById(postId)) {
@@ -42,21 +44,29 @@ public class BookmarkController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/posts/{postId}/bookmark/check")
+    @GetMapping({"/posts/{postId}/bookmark/check", "/api/posts/{postId}/bookmark/check", "/v1/posts/{postId}/bookmark/check", "/api/v1/posts/{postId}/bookmark/check"})
     public ResponseEntity<Map<String, Object>> checkBookmarked(
             @PathVariable Long postId) {
+        // Response an toàn mặc định — luôn trả về 200, không bắn 500
+        Map<String, Object> safeDefault = new HashMap<>();
+        safeDefault.put("bookmarked", false);
+        safeDefault.put("isBookmarked", false);
+
         if (postId == null || !postRepository.existsById(postId)) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("bookmarked", false);
-            response.put("isBookmarked", false);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(safeDefault);
         }
-        Long userId = currentUser.idOrNull();
-        boolean bookmarked = userId != null && bookmarkService.isBookmarkedByUser(userId, postId);
-        Map<String, Object> response = new HashMap<>();
-        response.put("bookmarked", bookmarked);
-        response.put("isBookmarked", bookmarked);
-        return ResponseEntity.ok(response);
+
+        try {
+            Long userId = currentUser.idOrNull(); // null nếu User chưa đăng nhập -> bookmarked=false
+            boolean bookmarked = userId != null && bookmarkService.isBookmarkedByUser(userId, postId);
+            Map<String, Object> response = new HashMap<>();
+            response.put("bookmarked", bookmarked);
+            response.put("isBookmarked", bookmarked);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("[checkBookmarked] Lỗi khi kiểm tra bookmark của user. postId={}", postId, e);
+            return ResponseEntity.ok(safeDefault);
+        }
     }
 
     @GetMapping("/users/{userId}/bookmarks")
