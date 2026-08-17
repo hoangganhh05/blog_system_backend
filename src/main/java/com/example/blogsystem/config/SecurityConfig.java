@@ -71,7 +71,8 @@ public class SecurityConfig {
                         // Public AI Assistant endpoints
                         .requestMatchers("/ai/**", "/api/ai/**", "/v1/ai/**", "/api/v1/ai/**").permitAll()
 
-                        // File Upload static resources
+                        // File Upload endpoints & static resources
+                        .requestMatchers("/upload/**", "/api/upload/**", "/v1/upload/**", "/api/v1/upload/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/**", "/api/uploads/**", "/v1/uploads/**", "/api/v1/uploads/**").permitAll()
 
                         // Public GET endpoints

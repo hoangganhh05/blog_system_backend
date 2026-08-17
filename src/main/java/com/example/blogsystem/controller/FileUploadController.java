@@ -1,112 +1,95 @@
 package com.example.blogsystem.controller;
 
+import com.example.blogsystem.service.R2StorageService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.http.MediaType;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.Set;
 
+@Slf4j
 @RestController
 @RequestMapping({"/upload", "/api/upload", "/v1/upload", "/api/v1/upload"})
+@RequiredArgsConstructor
 public class FileUploadController {
 
-    private static final Path UPLOAD_DIR = Paths.get("uploads").toAbsolutePath().normalize();
-    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
-    private static final Set<String> ALLOWED_TYPES = Set.of("image/jpeg", "image/png", "image/gif", "image/webp");
+    private final R2StorageService r2StorageService;
+
+    private static final long MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+    private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of(
+            "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"
+    );
 
     @PostMapping
-    public ResponseEntity<Map<String, Object>> uploadFile(@RequestParam("file") MultipartFile file) {
-        if (file.isEmpty()) {
+    public ResponseEntity<Map<String, Object>> uploadFile(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "folder", required = false, defaultValue = "media") String folder) {
+        if (file == null || file.isEmpty()) {
             Map<String, Object> err = new HashMap<>();
             err.put("error", "Tệp không được để trống!");
             return ResponseEntity.badRequest().body(err);
         }
-        if (file.getSize() > MAX_FILE_SIZE || !ALLOWED_TYPES.contains(file.getContentType())) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Chỉ chấp nhận ảnh JPG, PNG, GIF hoặc WebP, tối đa 5 MB."));
+
+        if (file.getSize() > MAX_FILE_SIZE) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Kích thước tệp vượt quá giới hạn cho phép (tối đa 50MB)."));
         }
 
         try {
-            // Tạo thư mục /uploads nếu chưa tồn tại
-            Files.createDirectories(UPLOAD_DIR);
-
-            // Đổi tên tệp bằng UUID để tránh trùng tên
-            String originalFilename = file.getOriginalFilename();
-            String extension = switch (file.getContentType()) {
-                case MediaType.IMAGE_JPEG_VALUE -> ".jpg";
-                case MediaType.IMAGE_PNG_VALUE -> ".png";
-                case MediaType.IMAGE_GIF_VALUE -> ".gif";
-                default -> ".webp";
-            };
-
-            String newFilename = UUID.randomUUID().toString() + extension;
-            Path filepath = UPLOAD_DIR.resolve(newFilename).normalize();
-            if (!filepath.startsWith(UPLOAD_DIR)) throw new IOException("Invalid upload path");
-
-            // Lưu tệp vào đĩa
-            Files.copy(file.getInputStream(), filepath);
-
-            // Tạo URL đường dẫn tương đối để client truy cập qua Reverse Proxy
-            String fileUrl = "/uploads/" + newFilename;
+            String fileUrl = r2StorageService.uploadFile(file, folder);
+            String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
 
             Map<String, Object> response = new HashMap<>();
+            response.put("status", "SUCCESS");
             response.put("url", fileUrl);
-            response.put("filename", newFilename);
+            response.put("secureUrl", fileUrl);
+            response.put("secure_url", fileUrl);
+            response.put("filename", fileName);
             return ResponseEntity.ok(response);
-
-        } catch (IOException e) {
+        } catch (Exception e) {
+            log.error("Lỗi khi tải tệp lên Cloudflare R2: ", e);
             Map<String, Object> err = new HashMap<>();
-            err.put("error", "Lỗi tải tệp lên server: " + e.getMessage());
+            err.put("error", "Lỗi tải tệp lên máy chủ lưu trữ: " + e.getMessage());
             return ResponseEntity.internalServerError().body(err);
         }
     }
 
     @PostMapping({"/multiple", "/batch"})
     public ResponseEntity<?> uploadMultipleFiles(
-            @RequestParam(value = "files", required = false) java.util.List<MultipartFile> files,
-            @RequestParam(value = "images", required = false) java.util.List<MultipartFile> images) {
-        java.util.List<MultipartFile> targetFiles = files != null ? files : images;
+            @RequestParam(value = "files", required = false) List<MultipartFile> files,
+            @RequestParam(value = "images", required = false) List<MultipartFile> images,
+            @RequestParam(value = "folder", required = false, defaultValue = "media") String folder) {
+        List<MultipartFile> targetFiles = files != null ? files : images;
         if (targetFiles == null || targetFiles.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Danh sách tệp không được để trống!"));
         }
 
         try {
-            Files.createDirectories(UPLOAD_DIR);
-            java.util.List<String> urls = new java.util.ArrayList<>();
-            java.util.List<String> filenames = new java.util.ArrayList<>();
+            List<String> urls = new ArrayList<>();
+            List<String> filenames = new ArrayList<>();
 
             for (MultipartFile file : targetFiles) {
-                if (file.isEmpty() || file.getSize() > MAX_FILE_SIZE || !ALLOWED_TYPES.contains(file.getContentType())) {
+                if (file == null || file.isEmpty() || file.getSize() > MAX_FILE_SIZE) {
                     continue;
                 }
-                String extension = switch (file.getContentType()) {
-                    case MediaType.IMAGE_JPEG_VALUE -> ".jpg";
-                    case MediaType.IMAGE_PNG_VALUE -> ".png";
-                    case MediaType.IMAGE_GIF_VALUE -> ".gif";
-                    default -> ".webp";
-                };
-                String newFilename = UUID.randomUUID().toString() + extension;
-                Path filepath = UPLOAD_DIR.resolve(newFilename).normalize();
-                if (!filepath.startsWith(UPLOAD_DIR)) throw new IOException("Invalid upload path");
-                Files.copy(file.getInputStream(), filepath);
-                urls.add("/uploads/" + newFilename);
-                filenames.add(newFilename);
+                String fileUrl = r2StorageService.uploadFile(file, folder);
+                String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+                urls.add(fileUrl);
+                filenames.add(fileName);
             }
 
             Map<String, Object> response = new HashMap<>();
+            response.put("status", "SUCCESS");
             response.put("urls", urls);
             response.put("filenames", filenames);
             return ResponseEntity.ok(response);
-        } catch (IOException e) {
+        } catch (Exception e) {
+            log.error("Lỗi khi tải nhiều tệp lên Cloudflare R2: ", e);
             return ResponseEntity.internalServerError().body(Map.of("error", "Lỗi tải tệp: " + e.getMessage()));
         }
     }
