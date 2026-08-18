@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -88,6 +90,38 @@ public class CommentImpl implements CommentService {
                     senderName + " đã bình luận về bài viết: \"" + saved.getPost().getTitle() + "\""
                 );
             }
+        }
+
+        // Detect and send notifications for mentioned users (@username)
+        try {
+            if (saved.getContent() != null && saved.getUser() != null) {
+                Pattern mentionPattern = Pattern.compile("@(\\w+)");
+                Matcher matcher = mentionPattern.matcher(saved.getContent());
+                
+                while (matcher.find()) {
+                    String mentionedUsername = matcher.group(1);
+                    try {
+                        User mentionedUser = userRepository.findByUsername(mentionedUsername).orElse(null);
+                        if (mentionedUser != null && 
+                            !mentionedUser.getId().equals(saved.getUser().getId())) {
+                            String senderName = saved.getUser().getFullName() != null ? 
+                                saved.getUser().getFullName() : saved.getUser().getUsername();
+                            notificationService.createNotification(
+                                mentionedUser,
+                                saved.getUser(),
+                                saved.getPost(),
+                                senderName + " đã nhắc đến bạn trong một bình luận"
+                            );
+                        }
+                    } catch (Exception e) {
+                        // Log error but continue processing other mentions
+                        System.err.println("Error processing mention for user: " + mentionedUsername);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Don't fail comment creation if mention processing fails
+            System.err.println("Error processing mentions in comment: " + e.getMessage());
         }
 
         return DTOMapper.toCommentDTO(saved);

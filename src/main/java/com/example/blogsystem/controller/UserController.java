@@ -243,4 +243,34 @@ public class UserController {
         res.put("status", "OFFLINE");
         return ResponseEntity.ok(res);
     }
+
+    // Gợi ý mention khi gõ @ trong comment: GET /users/mention-suggestions?keyword={query}
+    @GetMapping({"/mention-suggestions", "/api/users/mention-suggestions", "/v1/users/mention-suggestions", "/api/v1/users/mention-suggestions"})
+    public ResponseEntity<java.util.List<Map<String, Object>>> getMentionSuggestions(
+            @RequestParam(value = "keyword", required = false) String keyword) {
+        try {
+            java.util.List<Map<String, Object>> suggestions = new java.util.ArrayList<>();
+            java.util.List<User> users;
+            
+            if (keyword != null && !keyword.isBlank()) {
+                users = userRepository.findByUsernameStartingWithIgnoreCase(keyword);
+            } else {
+                users = userRepository.findAll();
+            }
+            
+            // Limit to 10 suggestions
+            users.stream().limit(10).forEach(user -> {
+                Map<String, Object> userMap = new HashMap<>();
+                userMap.put("id", user.getId());
+                userMap.put("username", user.getUsername());
+                userMap.put("fullName", user.getFullName());
+                userMap.put("avatarUrl", user.getAvatarUrl());
+                suggestions.add(userMap);
+            });
+            
+            return ResponseEntity.ok(suggestions);
+        } catch (Exception e) {
+            return ResponseEntity.ok(java.util.Collections.emptyList());
+        }
+    }
 }
