@@ -9,6 +9,7 @@ import com.example.blogsystem.service.UserService;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -94,6 +95,7 @@ public class UserImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public User changePassword(Long id, String oldPassword, String newPassword) {
         if (oldPassword == null || newPassword == null || newPassword.length() < 8) {
             throw new RuntimeException("Mật khẩu mới phải có ít nhất 8 ký tự!");
@@ -109,7 +111,8 @@ public class UserImpl implements UserService {
         }
 
         // Hash mật khẩu mới rồi lưu
-        user.setPassword(passwordEncoder.encode(newPassword));
+        String encodedNewPassword = passwordEncoder.encode(newPassword);
+        user.setPassword(encodedNewPassword);
         user.setUpdatedAt(LocalDateTime.now());
         return userRepository.save(user);
     }
