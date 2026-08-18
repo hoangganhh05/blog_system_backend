@@ -72,7 +72,21 @@ public class BookmarkController {
     @GetMapping({"/users/{userId}/bookmarks", "/api/users/{userId}/bookmarks", "/v1/users/{userId}/bookmarks", "/api/v1/users/{userId}/bookmarks"})
     public ResponseEntity<List<BookmarkDTO>> getUserBookmarks(@PathVariable Long userId) {
         try {
-            currentUser.requireOwnerOrAdmin(userId);
+            // Check authentication safely without throwing exceptions
+            Long currentUserId = currentUser.idOrNull();
+            if (currentUserId == null) {
+                // User not authenticated - return empty list instead of throwing 401
+                log.warn("[getUserBookmarks] User not authenticated, returning empty list. userId={}", userId);
+                return ResponseEntity.ok(java.util.Collections.emptyList());
+            }
+            
+            // Check if current user is owner or admin
+            if (!currentUserId.equals(userId) && !currentUser.isAdmin()) {
+                // User not authorized to view this user's bookmarks - return empty list
+                log.warn("[getUserBookmarks] User not authorized to view bookmarks. currentUserId={}, requestedUserId={}", currentUserId, userId);
+                return ResponseEntity.ok(java.util.Collections.emptyList());
+            }
+            
             List<Bookmark> bookmarks = bookmarkService.getUserBookmarks(userId);
             List<BookmarkDTO> bookmarkDTOs = bookmarks.stream()
                     .map(DTOMapper::toBookmarkDTO)
