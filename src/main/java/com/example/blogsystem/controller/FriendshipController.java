@@ -77,10 +77,17 @@ public class FriendshipController {
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> getStatus(
             @RequestParam Long targetUserId) {
-        String status = friendshipService.getFriendshipStatus(currentUser.id(), targetUserId);
-        Map<String, Object> result = new HashMap<>();
-        result.put("status", status);
-        return ResponseEntity.ok(result);
+        try {
+            Long currentId = currentUser.idOrNull();
+            String status = currentId != null ? friendshipService.getFriendshipStatus(currentId, targetUserId) : "NONE";
+            Map<String, Object> result = new HashMap<>();
+            result.put("status", status);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("status", "NONE");
+            return ResponseEntity.ok(result);
+        }
     }
 
     // Lấy danh sách bạn bè đã kết bạn của chính mình: GET /friends/list

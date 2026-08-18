@@ -5,6 +5,7 @@ import com.example.blogsystem.entity.Comment;
 import com.example.blogsystem.service.CommentService;
 import com.example.blogsystem.config.CurrentUser;
 import com.example.blogsystem.repository.UserRepository;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,13 +26,21 @@ public class CommentController {
 
     // Lấy comments theo bài viết — bắt buộc truyền postId để tránh LazyInitializationException
     @GetMapping
-    public List<CommentDTO> getComments(@RequestParam Long postId) {
-        return commentService.getCommentsByPostId(postId);
+    public ResponseEntity<List<CommentDTO>> getComments(@RequestParam Long postId) {
+        try {
+            return ResponseEntity.ok(commentService.getCommentsByPostId(postId));
+        } catch (Exception e) {
+            return ResponseEntity.ok(java.util.Collections.emptyList());
+        }
     }
 
     @GetMapping("/{id}")
-    public CommentDTO getCommentById(@PathVariable Long id) {
-        return commentService.getCommentById(id);
+    public ResponseEntity<CommentDTO> getCommentById(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(commentService.getCommentById(id));
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping

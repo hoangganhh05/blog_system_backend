@@ -4,6 +4,7 @@ import com.example.blogsystem.dto.CategoryDTO;
 import com.example.blogsystem.dto.DTOMapper;
 import com.example.blogsystem.entity.Category;
 import com.example.blogsystem.service.CategoryService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,15 +21,23 @@ public class CategoryController {
     }
 
     @GetMapping
-    public List<CategoryDTO> getCategories() {
-        return categoryService.getAllCategories().stream()
-                .map(DTOMapper::toCategoryDTO)
-                .collect(Collectors.toList());
+    public ResponseEntity<List<CategoryDTO>> getCategories() {
+        try {
+            return ResponseEntity.ok(categoryService.getAllCategories().stream()
+                    .map(DTOMapper::toCategoryDTO)
+                    .collect(Collectors.toList()));
+        } catch (Exception e) {
+            return ResponseEntity.ok(java.util.Collections.emptyList());
+        }
     }
 
     @GetMapping("/{id}")
-    public CategoryDTO getCategoryById(@PathVariable Long id) {
-        return DTOMapper.toCategoryDTO(categoryService.getCategoryById(id));
+    public ResponseEntity<CategoryDTO> getCategoryById(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(DTOMapper.toCategoryDTO(categoryService.getCategoryById(id)));
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping

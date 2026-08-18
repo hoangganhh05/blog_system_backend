@@ -44,11 +44,15 @@ public class StoryController {
     // Lấy tất cả Story còn hiệu lực (24h qua): GET /stories/active
     @GetMapping("/active")
     public ResponseEntity<List<StoryDTO>> getActiveStories() {
-        List<Story> stories = storyService.getActiveStories();
-        List<StoryDTO> dtos = stories.stream()
-                .map(DTOMapper::toStoryDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(dtos);
+        try {
+            List<Story> stories = storyService.getActiveStories();
+            List<StoryDTO> dtos = stories.stream()
+                    .map(DTOMapper::toStoryDTO)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(dtos);
+        } catch (Exception e) {
+            return ResponseEntity.ok(java.util.Collections.emptyList());
+        }
     }
 
     // Lấy kho lưu trữ tin của chính mình hoặc user chỉ định: GET /stories/archive

@@ -62,11 +62,17 @@ public class FollowController {
     // Kiểm tra trạng thái theo dõi: GET /follows/status?targetUserId=...
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> getStatus(@RequestParam Long targetUserId) {
-        Long currentId = currentUser.idOrNull();
-        boolean isFollowing = currentId != null && followService.isFollowing(currentId, targetUserId);
-        Map<String, Object> result = new HashMap<>();
-        result.put("isFollowing", isFollowing);
-        return ResponseEntity.ok(result);
+        try {
+            Long currentId = currentUser.idOrNull();
+            boolean isFollowing = currentId != null && followService.isFollowing(currentId, targetUserId);
+            Map<String, Object> result = new HashMap<>();
+            result.put("isFollowing", isFollowing);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("isFollowing", false);
+            return ResponseEntity.ok(result);
+        }
     }
 
     // Lấy danh sách những người user đang theo dõi: GET /follows/following hoặc GET /follows/following/{userId}

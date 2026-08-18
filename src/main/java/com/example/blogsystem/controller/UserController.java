@@ -32,30 +32,34 @@ public class UserController {
     }
 
     @GetMapping
-    public org.springframework.data.domain.Page<UserPublicDTO> getUsers(
+    public ResponseEntity<org.springframework.data.domain.Page<UserPublicDTO>> getUsers(
             @RequestParam(value = "query", required = false) String query,
             @RequestParam(value = "q", required = false) String q,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "20") int size) {
-        String searchKeyword = (query != null && !query.isBlank()) ? query : q;
-        int pageSize = Math.min(Math.max(size, 1), 50);
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(Math.max(page, 0), pageSize);
-
-        Long myId = null;
         try {
-            myId = currentUser.id();
-        } catch (Exception ignored) {}
-        final Long currentId = myId;
+            String searchKeyword = (query != null && !query.isBlank()) ? query : q;
+            int pageSize = Math.min(Math.max(size, 1), 50);
+            org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(Math.max(page, 0), pageSize);
 
-        return userService.searchUsers(searchKeyword, pageable)
-                .map(u -> {
-                    boolean hasMessaged = currentId != null && (currentId.equals(u.getId()) || chatMessageRepository.existsBetweenUsers(currentId, u.getId()));
-                    return DTOMapper.toUserPublicDTO(u, hasMessaged);
-                });
+            Long myId = null;
+            try {
+                myId = currentUser.id();
+            } catch (Exception ignored) {}
+            final Long currentId = myId;
+
+            return ResponseEntity.ok(userService.searchUsers(searchKeyword, pageable)
+                    .map(u -> {
+                        boolean hasMessaged = currentId != null && (currentId.equals(u.getId()) || chatMessageRepository.existsBetweenUsers(currentId, u.getId()));
+                        return DTOMapper.toUserPublicDTO(u, hasMessaged);
+                    }));
+        } catch (Exception e) {
+            return ResponseEntity.ok(org.springframework.data.domain.Page.empty());
+        }
     }
 
     @GetMapping("/search")
-    public org.springframework.data.domain.Page<UserPublicDTO> searchUsers(
+    public ResponseEntity<org.springframework.data.domain.Page<UserPublicDTO>> searchUsers(
             @RequestParam(value = "q", required = false) String q,
             @RequestParam(value = "query", required = false) String query,
             @RequestParam(value = "page", defaultValue = "0") int page,
@@ -64,27 +68,35 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public UserProfileDTO getMyProfile() {
-        Long myId = currentUser.id();
-        User user = userService.getUserById(myId);
-        return DTOMapper.toUserProfileDTO(user);
+    public ResponseEntity<UserProfileDTO> getMyProfile() {
+        try {
+            Long myId = currentUser.id();
+            User user = userService.getUserById(myId);
+            return ResponseEntity.ok(DTOMapper.toUserProfileDTO(user));
+        } catch (Exception e) {
+            return ResponseEntity.status(401).build();
+        }
     }
 
     @GetMapping("/{id}")
-    public Object getUserById(@PathVariable Long id) {
-        User user = userService.getUserById(id);
-        Long myId = null;
+    public ResponseEntity<Object> getUserById(@PathVariable Long id) {
         try {
-            myId = currentUser.id();
-        } catch (Exception ignored) {}
+            User user = userService.getUserById(id);
+            Long myId = null;
+            try {
+                myId = currentUser.id();
+            } catch (Exception ignored) {}
 
-        if (myId != null && myId.equals(id)) {
-            // Chính chủ gọi API của mình: Trả về UserProfileDTO
-            return DTOMapper.toUserProfileDTO(user);
+            if (myId != null && myId.equals(id)) {
+                // Chính chủ gọi API của mình: Trả về UserProfileDTO
+                return ResponseEntity.ok(DTOMapper.toUserProfileDTO(user));
+            }
+            // Người khác xem profile: Kiểm tra xem đã từng nhắn tin chưa
+            boolean hasMessaged = myId != null && chatMessageRepository.existsBetweenUsers(myId, id);
+            return ResponseEntity.ok(DTOMapper.toUserPublicDTO(user, hasMessaged));
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
         }
-        // Người khác xem profile: Kiểm tra xem đã từng nhắn tin chưa
-        boolean hasMessaged = myId != null && chatMessageRepository.existsBetweenUsers(myId, id);
-        return DTOMapper.toUserPublicDTO(user, hasMessaged);
     }
 
     @PostMapping

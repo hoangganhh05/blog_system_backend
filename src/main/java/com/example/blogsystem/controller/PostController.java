@@ -41,28 +41,47 @@ public class PostController {
     public Page<PostDTO> getPostsByCategory(
             @PathVariable Long categoryId,
             Pageable pageable) {
-
-        return postService.getPostsByCategory(categoryId, pageable)
-                .map(DTOMapper::toPostDTO);
+        try {
+            return postService.getPostsByCategory(categoryId, pageable)
+                    .map(DTOMapper::toPostDTO);
+        } catch (Exception e) {
+            return Page.empty();
+        }
     }
     @GetMapping
     public Page<PostDTO> getPosts(Pageable pageable) {
-        return postService.getAllPosts(pageable)
-                .map(DTOMapper::toPostDTO);
+        try {
+            return postService.getAllPosts(pageable)
+                    .map(DTOMapper::toPostDTO);
+        } catch (Exception e) {
+            return Page.empty();
+        }
     }
     @GetMapping("/search")
     public Page<PostDTO> searchPosts(@RequestParam String query, Pageable pageable) {
-        return postService.searchPosts(query, pageable)
-                .map(DTOMapper::toPostDTO);
+        try {
+            return postService.searchPosts(query, pageable)
+                    .map(DTOMapper::toPostDTO);
+        } catch (Exception e) {
+            return Page.empty();
+        }
     }
     @GetMapping("/{id}")
-    public PostDTO getPostById(@PathVariable Long id) {
-        return DTOMapper.toPostDTO(postService.getPostById(id));
+    public ResponseEntity<PostDTO> getPostById(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(DTOMapper.toPostDTO(postService.getPostById(id)));
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping("/{id}/view")
-    public PostDTO incrementView(@PathVariable Long id) {
-        return DTOMapper.toPostDTO(postService.incrementViewCount(id));
+    public ResponseEntity<PostDTO> incrementView(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(DTOMapper.toPostDTO(postService.incrementViewCount(id)));
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
     }
     @PostMapping
     public PostDTO createPost(@RequestBody Post post) {

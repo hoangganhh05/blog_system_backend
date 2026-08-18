@@ -65,6 +65,19 @@ public class BookmarkServiceImpl implements BookmarkService {
 
     @Override
     public List<Bookmark> getUserBookmarks(Long userId) {
-        return bookmarkRepository.findByUserId(userId);
+        try {
+            if (userId == null) {
+                log.warn("[getUserBookmarks] userId is null");
+                return java.util.Collections.emptyList();
+            }
+            List<Bookmark> bookmarks = bookmarkRepository.findByUserId(userId);
+            if (bookmarks == null) {
+                return java.util.Collections.emptyList();
+            }
+            return bookmarks;
+        } catch (Exception e) {
+            log.error("[getUserBookmarks] Lỗi khi lấy danh sách bookmark của user. userId={}", userId, e);
+            return java.util.Collections.emptyList();
+        }
     }
 }

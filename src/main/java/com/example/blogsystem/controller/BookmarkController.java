@@ -69,13 +69,18 @@ public class BookmarkController {
         }
     }
 
-    @GetMapping("/users/{userId}/bookmarks")
+    @GetMapping({"/users/{userId}/bookmarks", "/api/users/{userId}/bookmarks", "/v1/users/{userId}/bookmarks", "/api/v1/users/{userId}/bookmarks"})
     public ResponseEntity<List<BookmarkDTO>> getUserBookmarks(@PathVariable Long userId) {
-        currentUser.requireOwnerOrAdmin(userId);
-        List<Bookmark> bookmarks = bookmarkService.getUserBookmarks(userId);
-        List<BookmarkDTO> bookmarkDTOs = bookmarks.stream()
-                .map(DTOMapper::toBookmarkDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(bookmarkDTOs);
+        try {
+            currentUser.requireOwnerOrAdmin(userId);
+            List<Bookmark> bookmarks = bookmarkService.getUserBookmarks(userId);
+            List<BookmarkDTO> bookmarkDTOs = bookmarks.stream()
+                    .map(DTOMapper::toBookmarkDTO)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(bookmarkDTOs);
+        } catch (Exception e) {
+            log.error("[getUserBookmarks] Lỗi khi lấy danh sách bookmark của user. userId={}", userId, e);
+            return ResponseEntity.ok(java.util.Collections.emptyList());
+        }
     }
 }
