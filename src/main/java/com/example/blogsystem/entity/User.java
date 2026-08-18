@@ -50,6 +50,14 @@ public class User {
     private Boolean isOnline = false;
     private LocalDateTime lastActiveAt;
 
+    // Social Media Links
+    private String facebookUrl;
+    private String tiktokUrl;
+    private String instagramUrl;
+    private String youtubeUrl;
+    private String githubUrl;
+    private String twitterUrl;
+
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Post> posts;

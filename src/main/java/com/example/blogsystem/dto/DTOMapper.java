@@ -74,6 +74,14 @@ public class DTOMapper {
         dto.setLastActiveAt(showStatus ? user.getLastActiveAt() : null);
         dto.setShowActiveStatus(showStatus);
 
+        // Social Media Links
+        dto.setFacebookUrl(user.getFacebookUrl());
+        dto.setTiktokUrl(user.getTiktokUrl());
+        dto.setInstagramUrl(user.getInstagramUrl());
+        dto.setYoutubeUrl(user.getYoutubeUrl());
+        dto.setGithubUrl(user.getGithubUrl());
+        dto.setTwitterUrl(user.getTwitterUrl());
+
         return dto;
     }
 
@@ -103,6 +111,14 @@ public class DTOMapper {
                 (user.getLastActiveAt() != null && user.getLastActiveAt().isAfter(java.time.LocalDateTime.now().minusMinutes(5)));
         dto.setIsOnline(isRecentActive);
         dto.setLastActiveAt(user.getLastActiveAt());
+
+        // Social Media Links
+        dto.setFacebookUrl(user.getFacebookUrl());
+        dto.setTiktokUrl(user.getTiktokUrl());
+        dto.setInstagramUrl(user.getInstagramUrl());
+        dto.setYoutubeUrl(user.getYoutubeUrl());
+        dto.setGithubUrl(user.getGithubUrl());
+        dto.setTwitterUrl(user.getTwitterUrl());
 
         return dto;
     }

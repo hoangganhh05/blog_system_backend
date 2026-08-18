@@ -81,6 +81,14 @@ public class UserImpl implements UserService {
         if (user.getBannerUrl() != null && !user.getBannerUrl().isBlank())
             existingUser.setBannerUrl(user.getBannerUrl());
 
+        // Cập nhật Social Media Links (cho phép chuỗi rỗng để xóa liên kết)
+        if (user.getFacebookUrl() != null) existingUser.setFacebookUrl(user.getFacebookUrl().trim());
+        if (user.getTiktokUrl() != null) existingUser.setTiktokUrl(user.getTiktokUrl().trim());
+        if (user.getInstagramUrl() != null) existingUser.setInstagramUrl(user.getInstagramUrl().trim());
+        if (user.getYoutubeUrl() != null) existingUser.setYoutubeUrl(user.getYoutubeUrl().trim());
+        if (user.getGithubUrl() != null) existingUser.setGithubUrl(user.getGithubUrl().trim());
+        if (user.getTwitterUrl() != null) existingUser.setTwitterUrl(user.getTwitterUrl().trim());
+
         existingUser.setUpdatedAt(LocalDateTime.now());
         return userRepository.save(existingUser);
     }

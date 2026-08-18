@@ -18,4 +18,12 @@ public class UserPublicDTO {
     private Boolean isOnline;
     private java.time.LocalDateTime lastActiveAt;
     private Boolean showActiveStatus;
+
+    // Social Media Links
+    private String facebookUrl;
+    private String tiktokUrl;
+    private String instagramUrl;
+    private String youtubeUrl;
+    private String githubUrl;
+    private String twitterUrl;
 }
