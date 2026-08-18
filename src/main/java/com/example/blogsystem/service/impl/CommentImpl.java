@@ -131,8 +131,54 @@ public class CommentImpl implements CommentService {
     public CommentDTO updateComment(Long id, Comment comment) {
         Comment existingComment = commentRepository.findById(id).orElseThrow(() -> new RuntimeException("Comment not found"));
         existingComment.setContent(comment.getContent());
-        existingComment.setCreatedAt(comment.getCreatedAt());
-        return DTOMapper.toCommentDTO(commentRepository.save(existingComment));
+        existingComment.setUpdatedAt(LocalDateTime.now());
+        Comment saved = commentRepository.save(existingComment);
+        
+        // Detect and send notifications for NEW mentioned users (@username) in updated comment
+        // Only notify users who were NOT mentioned in the original comment to avoid duplicates
+        try {
+            if (saved.getContent() != null && saved.getUser() != null) {
+                Pattern mentionPattern = Pattern.compile("@(\\w+)");
+                Matcher matcher = mentionPattern.matcher(saved.getContent());
+                
+                // Get original mentions to avoid duplicate notifications
+                String originalContent = existingComment.getContent() != null ? existingComment.getContent() : "";
+                java.util.Set<String> originalMentions = new java.util.HashSet<>();
+                Matcher originalMatcher = mentionPattern.matcher(originalContent);
+                while (originalMatcher.find()) {
+                    originalMentions.add(originalMatcher.group(1).toLowerCase());
+                }
+                
+                while (matcher.find()) {
+                    String mentionedUsername = matcher.group(1);
+                    try {
+                        // Only notify if this is a new mention (not in original comment)
+                        if (!originalMentions.contains(mentionedUsername.toLowerCase())) {
+                            User mentionedUser = userRepository.findByUsername(mentionedUsername).orElse(null);
+                            if (mentionedUser != null && 
+                                !mentionedUser.getId().equals(saved.getUser().getId())) {
+                                String senderName = saved.getUser().getFullName() != null ? 
+                                    saved.getUser().getFullName() : saved.getUser().getUsername();
+                                notificationService.createNotification(
+                                    mentionedUser,
+                                    saved.getUser(),
+                                    saved.getPost(),
+                                    senderName + " đã nhắc đến bạn trong một bình luận đã chỉnh sửa"
+                                );
+                            }
+                        }
+                    } catch (Exception e) {
+                        // Log error but continue processing other mentions
+                        System.err.println("Error processing mention for user: " + mentionedUsername);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Don't fail comment update if mention processing fails
+            System.err.println("Error processing mentions in updated comment: " + e.getMessage());
+        }
+        
+        return DTOMapper.toCommentDTO(saved);
     }
 
     @Override

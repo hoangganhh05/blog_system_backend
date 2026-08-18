@@ -50,10 +50,19 @@ public class CommentController {
     }
 
     @PutMapping("/{id}")
-    public CommentDTO updateComment(@PathVariable Long id,
+    public ResponseEntity<CommentDTO> updateComment(@PathVariable Long id,
                                  @RequestBody Comment comment) {
-        currentUser.requireOwnerOrAdmin(commentService.getCommentById(id).getUser().getId());
-        return commentService.updateComment(id, comment);
+        try {
+            CommentDTO existingComment = commentService.getCommentById(id);
+            if (existingComment == null || existingComment.getUser() == null) {
+                return ResponseEntity.notFound().build();
+            }
+            currentUser.requireOwnerOrAdmin(existingComment.getUser().getId());
+            CommentDTO updated = commentService.updateComment(id, comment);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @DeleteMapping("/{id}")
