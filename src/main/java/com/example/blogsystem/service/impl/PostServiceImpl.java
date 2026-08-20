@@ -106,6 +106,14 @@ public class PostServiceImpl implements PostService {
                 post.setCategory(null);
             }
 
+            // Nếu là bài chia sẻ (repost/quote) — gắn sharedPost để đếm lượt share sau này
+            if (post.getSharedPost() != null && post.getSharedPost().getId() != null) {
+                Post original = postRepository.findById(post.getSharedPost().getId()).orElse(null);
+                if (original != null) {
+                    post.setSharedPost(original);
+                }
+            }
+
             if (post.getImageUrls() != null && !post.getImageUrls().isEmpty()) {
                 if (post.getThumbNail() == null || post.getThumbNail().isBlank()) {
                     post.setThumbNail(post.getImageUrls().get(0));

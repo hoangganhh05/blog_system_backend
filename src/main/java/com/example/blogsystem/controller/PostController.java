@@ -7,6 +7,8 @@ import com.example.blogsystem.entity.Post;
 import com.example.blogsystem.service.PostService;
 import com.example.blogsystem.config.CurrentUser;
 import com.example.blogsystem.repository.PostRepository;
+import com.example.blogsystem.repository.PostLikeRepository;
+import com.example.blogsystem.repository.CommentRepository;
 import com.example.blogsystem.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -27,14 +29,34 @@ public class PostController {
 
     private final PostService postService;
     private final PostRepository postRepository;
+    private final PostLikeRepository postLikeRepository;
+    private final CommentRepository commentRepository;
     private final UserRepository userRepository;
     private final CurrentUser currentUser;
 
-    public PostController(PostService postService, PostRepository postRepository, UserRepository userRepository, CurrentUser currentUser) {
+    public PostController(PostService postService, PostRepository postRepository, PostLikeRepository postLikeRepository, CommentRepository commentRepository, UserRepository userRepository, CurrentUser currentUser) {
         this.postService = postService;
         this.postRepository = postRepository;
+        this.postLikeRepository = postLikeRepository;
+        this.commentRepository = commentRepository;
         this.userRepository = userRepository;
         this.currentUser = currentUser;
+    }
+
+    // Map Post -> PostDTO and enrich real like/comment/share counts from the DB
+    private PostDTO toPostDTOWithCounts(Post post) {
+        PostDTO dto = DTOMapper.toPostDTO(post);
+        if (dto == null || dto.getId() == null) return dto;
+        try {
+            dto.setLikesCount(postLikeRepository.countByPostId(dto.getId()));
+        } catch (Exception ignored) {}
+        try {
+            dto.setCommentsCount(commentRepository.countByPostId(dto.getId()));
+        } catch (Exception ignored) {}
+        try {
+            dto.setSharesCount(postRepository.countBySharedPostId(dto.getId()));
+        } catch (Exception ignored) {}
+        return dto;
     }
 
     @GetMapping("/category/{categoryId}")
@@ -43,7 +65,7 @@ public class PostController {
             Pageable pageable) {
         try {
             return postService.getPostsByCategory(categoryId, pageable)
-                    .map(DTOMapper::toPostDTO);
+                    .map(this::toPostDTOWithCounts);
         } catch (Exception e) {
             return Page.empty();
         }
@@ -52,7 +74,7 @@ public class PostController {
     public Page<PostDTO> getPosts(Pageable pageable) {
         try {
             return postService.getAllPosts(pageable)
-                    .map(DTOMapper::toPostDTO);
+                    .map(this::toPostDTOWithCounts);
         } catch (Exception e) {
             return Page.empty();
         }
@@ -61,7 +83,7 @@ public class PostController {
     public Page<PostDTO> searchPosts(@RequestParam String query, Pageable pageable) {
         try {
             return postService.searchPosts(query, pageable)
-                    .map(DTOMapper::toPostDTO);
+                    .map(this::toPostDTOWithCounts);
         } catch (Exception e) {
             return Page.empty();
         }
@@ -69,7 +91,7 @@ public class PostController {
     @GetMapping("/{id}")
     public ResponseEntity<PostDTO> getPostById(@PathVariable Long id) {
         try {
-            return ResponseEntity.ok(DTOMapper.toPostDTO(postService.getPostById(id)));
+            return ResponseEntity.ok(toPostDTOWithCounts(postService.getPostById(id)));
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
@@ -78,7 +100,7 @@ public class PostController {
     @PostMapping("/{id}/view")
     public ResponseEntity<PostDTO> incrementView(@PathVariable Long id) {
         try {
-            return ResponseEntity.ok(DTOMapper.toPostDTO(postService.incrementViewCount(id)));
+            return ResponseEntity.ok(toPostDTOWithCounts(postService.incrementViewCount(id)));
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
@@ -86,7 +108,7 @@ public class PostController {
     @PostMapping
     public PostDTO createPost(@RequestBody Post post) {
         try {
-            return DTOMapper.toPostDTO(postService.createPost(post, currentUser.id()));
+            return toPostDTOWithCounts(postService.createPost(post, currentUser.id()));
         } catch (Exception e) {
             log.error("Lỗi tạo bài viết: ", e);
             throw e;
@@ -98,7 +120,21 @@ public class PostController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bài viết ID: " + id));
         currentUser.requireOwnerOrAdmin(existing.getUser().getId());
         Post updated = postService.updatePost(id, post);
-        return ResponseEntity.ok(DTOMapper.toPostDTO(updated));
+        return ResponseEntity.ok(toPostDTOWithCounts(updated));
+    }
+
+    // Lấy số lượt chia sẻ (số bài viết trỏ sharedPost tới bài này) từ server
+    @GetMapping("/{id}/shares/count")
+    public ResponseEntity<Map<String, Object>> getShareCount(@PathVariable Long id) {
+        try {
+            if (!postRepository.existsById(id)) {
+                return ResponseEntity.ok(Map.of("count", 0L));
+            }
+            long count = postRepository.countBySharedPostId(id);
+            return ResponseEntity.ok(Map.of("count", count));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of("count", 0L));
+        }
     }
 
     @DeleteMapping("/{id}")

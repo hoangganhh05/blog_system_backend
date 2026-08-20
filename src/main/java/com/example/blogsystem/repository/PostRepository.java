@@ -17,6 +17,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     List<Post> findByUserId(Long userId);
     List<Post> findBySharedPostId(Long sharedPostId);
     Page<Post> findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(String title, String content, Pageable pageable);
+    long countBySharedPostId(Long sharedPostId);
 
     @Query("SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.user LEFT JOIN FETCH p.category LEFT JOIN FETCH p.sharedPost WHERE p.id = :id")
     Optional<Post> findByIdWithRelations(Long id);

@@ -21,6 +21,9 @@ public class PostDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Integer viewCount;
+    private Long likesCount = 0L;
+    private Long commentsCount = 0L;
+    private Long sharesCount = 0L;
     private UserPublicDTO user;
     private CategoryDTO category;
     private PostDTO sharedPost;

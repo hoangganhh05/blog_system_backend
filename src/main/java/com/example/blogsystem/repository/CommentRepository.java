@@ -13,6 +13,7 @@ import java.util.List;
 @Repository
 public interface CommentRepository extends JpaRepository<Comment, Long> {
     List<Comment> findByPostId(Long postId);
+    long countByPostId(Long postId);
 
     @Query("SELECT c FROM Comment c LEFT JOIN FETCH c.user WHERE c.post.id = :postId ORDER BY c.createdAt DESC")
     List<Comment> findByPostIdWithUser(@Param("postId") Long postId);
