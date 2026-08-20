@@ -21,7 +21,7 @@ public class FileUploadController {
 
     private final R2StorageService r2StorageService;
 
-    private static final long MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+    private static final long MAX_FILE_SIZE = 2L * 1024 * 1024 * 1024; // 2GB – không giới hạn gắt đối với video (giới hạn thời lượng xử lý ở frontend: 2 phút)
     private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of(
             "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"
     );
@@ -37,7 +37,7 @@ public class FileUploadController {
         }
 
         if (file.getSize() > MAX_FILE_SIZE) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Kích thước tệp vượt quá giới hạn cho phép (tối đa 50MB)."));
+            return ResponseEntity.badRequest().body(Map.of("error", "Kích thước tệp vượt quá giới hạn cho phép (tối đa 2GB)."));
         }
 
         try {
