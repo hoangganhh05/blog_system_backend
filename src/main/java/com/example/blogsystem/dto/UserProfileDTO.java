@@ -17,6 +17,7 @@ public class UserProfileDTO {
     private String avatarUrl;
     private String bannerUrl;
     private String emailPrivacy;
+    private String preferredLanguage;
     private String postVisibility;
     private String friendRequestScope;
     private String messageScope;

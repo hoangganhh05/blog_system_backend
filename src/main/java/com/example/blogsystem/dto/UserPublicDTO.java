@@ -18,6 +18,7 @@ public class UserPublicDTO {
     private Boolean isOnline;
     private java.time.LocalDateTime lastActiveAt;
     private Boolean showActiveStatus;
+    private String preferredLanguage;
 
     // Social Media Links
     private String facebookUrl;

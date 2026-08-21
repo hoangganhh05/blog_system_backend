@@ -39,6 +39,7 @@ public class User {
     private String emailPrivacy = "private"; // quyền riêng tư email: "private", "friends", "public"
 
     // Cài đặt quyền riêng tư bài viết & tương tác lưu Database vĩnh viễn
+    private String preferredLanguage = "vi"; // "vi", "en", "ja", "zh"
     private String postVisibility = "PUBLIC"; // "PUBLIC", "FRIENDS", "ONLY_ME"
     private String friendRequestScope = "EVERYONE"; // "EVERYONE", "FRIENDS_OF_FRIENDS"
     private String messageScope = "EVERYONE"; // "EVERYONE", "FRIENDS"

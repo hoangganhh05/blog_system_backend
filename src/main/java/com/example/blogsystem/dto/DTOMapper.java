@@ -34,6 +34,7 @@ public class DTOMapper {
         dto.setBgColor(post.getBgColor());
         dto.setVideoUrl(post.getVideoUrl());
         dto.setMediaType(post.getMediaType());
+        dto.setSourceLanguage(post.getSourceLanguage());
         dto.setCreatedAt(post.getCreatedAt());
         dto.setUpdatedAt(post.getUpdatedAt());
         dto.setViewCount(post.getViewCount());
@@ -68,6 +69,7 @@ public class DTOMapper {
         dto.setAvatarColor(user.getAvatarColor());
         dto.setAvatarUrl(user.getAvatarUrl());
         dto.setBannerUrl(user.getBannerUrl());
+        dto.setPreferredLanguage(user.getPreferredLanguage() != null ? user.getPreferredLanguage() : "vi");
 
         boolean showStatus = !Boolean.FALSE.equals(user.getShowActiveStatus()) && hasMessaged;
         boolean isRecentActive = showStatus && (Boolean.TRUE.equals(user.getIsOnline()) ||
@@ -100,6 +102,7 @@ public class DTOMapper {
         dto.setAvatarUrl(user.getAvatarUrl());
         dto.setBannerUrl(user.getBannerUrl());
         dto.setEmailPrivacy(user.getEmailPrivacy());
+        dto.setPreferredLanguage(user.getPreferredLanguage() != null ? user.getPreferredLanguage() : "vi");
         dto.setPostVisibility(user.getPostVisibility());
         dto.setFriendRequestScope(user.getFriendRequestScope());
         dto.setMessageScope(user.getMessageScope());

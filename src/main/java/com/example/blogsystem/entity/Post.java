@@ -32,6 +32,10 @@ public class Post {
 
     @Column(name = "media_type")
     private String mediaType;
+
+    @Column(name = "source_language")
+    private String sourceLanguage;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

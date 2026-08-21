@@ -79,8 +79,8 @@ public class UserImpl implements UserService {
         // Chỉ cập nhật URL ảnh khi có giá trị thực, không ghi đè bằng chuỗi rỗng
         if (user.getAvatarUrl() != null && !user.getAvatarUrl().isBlank())
             existingUser.setAvatarUrl(user.getAvatarUrl());
-        if (user.getBannerUrl() != null && !user.getBannerUrl().isBlank())
-            existingUser.setBannerUrl(user.getBannerUrl());
+        if (user.getPreferredLanguage() != null && !user.getPreferredLanguage().isBlank())
+            existingUser.setPreferredLanguage(user.getPreferredLanguage().trim());
 
         // Cập nhật Social Media Links (cho phép chuỗi rỗng để xóa liên kết)
         if (user.getFacebookUrl() != null) existingUser.setFacebookUrl(user.getFacebookUrl().trim());
