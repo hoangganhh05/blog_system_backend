@@ -315,6 +315,24 @@ public class PostServiceImpl implements PostService {
         );
     }
 
+    @Override
+    public List<Post> getReelsCarousel(int limit, Long currentUserId) {
+        List<Post> allVideos = postRepository.findAllVideoPostsWithRelations();
+        if (allVideos == null || allVideos.isEmpty()) {
+            return List.of();
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        java.util.Random random = new java.util.Random();
+
+        // Lấy danh sách video ngắn đề xuất nổi bật nhất
+        return allVideos.stream().sorted((p1, p2) -> {
+            double s1 = computeRecommendationScore(p1, now, random);
+            double s2 = computeRecommendationScore(p2, now, random);
+            return Double.compare(s2, s1);
+        }).limit(Math.max(1, Math.min(limit, 30))).toList();
+    }
+
     private double computeRecommendationScore(Post post, LocalDateTime now, java.util.Random random) {
         if (post == null || post.getId() == null) return 0.0;
         long likes = 0;

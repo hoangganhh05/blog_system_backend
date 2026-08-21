@@ -96,6 +96,22 @@ public class PostController {
             return ResponseEntity.ok(Page.empty());
         }
     }
+
+    @GetMapping("/feed/reels-carousel")
+    public ResponseEntity<List<PostDTO>> getReelsCarousel(@RequestParam(defaultValue = "10") int limit) {
+        try {
+            Long userId = null;
+            try { userId = currentUser.id(); } catch (Exception ignored) {}
+            List<PostDTO> result = postService.getReelsCarousel(limit, userId)
+                    .stream()
+                    .map(this::toPostDTOWithCounts)
+                    .toList();
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Lỗi lấy danh sách reels carousel: ", e);
+            return ResponseEntity.ok(List.of());
+        }
+    }
     @GetMapping("/search")
     public Page<PostDTO> searchPosts(@RequestParam String query, Pageable pageable) {
         try {

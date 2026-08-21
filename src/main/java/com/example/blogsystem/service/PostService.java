@@ -22,4 +22,5 @@ public interface PostService {
 
     Post incrementViewCount(Long id);
     Page<Post> getRecommendedShortsFeed(int page, int size, java.util.List<Long> excludeIds, Long currentUserId);
+    java.util.List<Post> getReelsCarousel(int limit, Long currentUserId);
 }
