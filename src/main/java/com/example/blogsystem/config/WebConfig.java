@@ -35,4 +35,10 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:/" + uploadPath + "/");
     }
+
+    @Override
+    public void configureAsyncSupport(org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer configurer) {
+        // Cấu hình timeout mặc định 180s cho các kết nối SSE Stream tránh lỗi 504 Gateway Timeout
+        configurer.setDefaultTimeout(180_000L);
+    }
 }

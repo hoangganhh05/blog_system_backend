@@ -38,20 +38,28 @@ public class AiController {
             return ResponseEntity.ok(new AiResponse(reply));
         } catch (Exception e) {
             log.error("Lỗi khi xử lý chat AI: ", e);
-            return ResponseEntity.ok(new AiResponse("Hiện tại hệ thống Trợ lý AI đang bận. Vui lòng bấm nút Thử lại!"));
+            return ResponseEntity.ok(new AiResponse("Hệ thống AI đang quá tải, vui lòng thử lại sau giây lát!"));
         }
     }
 
     @PostMapping(value = {"/stream", "/chat/stream"}, produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseBodyEmitter streamChatWithAi(@RequestBody AiRequest request) {
-        ResponseBodyEmitter emitter = new ResponseBodyEmitter(120_000L); // 120s timeout
+        ResponseBodyEmitter emitter = new ResponseBodyEmitter(180_000L); // 180s timeout
 
         executorService.submit(() -> {
             try {
+                // 1. Gửi ngay event 'connected' trong < 100ms để Reverse Proxy / Nginx / Cloudflare mở luồng 200 OK ngay lập tức, tránh lỗi 504
+                try {
+                    Map<String, String> initData = Collections.singletonMap("status", "connected");
+                    emitter.send("data: " + objectMapper.writeValueAsString(initData) + "\n\n");
+                } catch (Exception ignored) {
+                }
+
                 String prompt = request != null ? request.getPrompt() : "";
                 String imageBase64 = request != null ? request.getImageBase64() : null;
                 String imageMimeType = request != null ? request.getImageMimeType() : null;
 
+                // 2. Stream từng token trả về từ AI
                 aiService.streamReply(prompt, imageBase64, imageMimeType, chunk -> {
                     try {
                         Map<String, String> data = Collections.singletonMap("chunk", chunk);
@@ -66,7 +74,7 @@ public class AiController {
             } catch (Exception e) {
                 log.error("Lỗi khi stream chat AI: ", e);
                 try {
-                    Map<String, String> err = Collections.singletonMap("error", "Đã xảy ra sự cố kết nối. Vui lòng thử lại!");
+                    Map<String, String> err = Collections.singletonMap("error", "Hệ thống AI đang quá tải, vui lòng thử lại sau giây lát!");
                     emitter.send("data: " + objectMapper.writeValueAsString(err) + "\n\n");
                 } catch (Exception ignored) {
                 }
