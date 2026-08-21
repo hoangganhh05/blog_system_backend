@@ -20,6 +20,7 @@ public class PostDTO {
     private String bgColor;
     private String videoUrl;
     private String mediaType;
+    private String sourceLanguage;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Integer viewCount;

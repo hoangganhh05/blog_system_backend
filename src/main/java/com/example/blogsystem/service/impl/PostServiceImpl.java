@@ -31,6 +31,7 @@ public class PostServiceImpl implements PostService {
     private final BookmarkRepository bookmarkRepository;
     private final PostLikeRepository postLikeRepository;
     private final CommentRepository commentRepository;
+    private final com.example.blogsystem.service.TranslationService translationService;
 
     public PostServiceImpl(PostRepository postRepository,
                            CategoryRepository categoryRepository,
@@ -38,7 +39,8 @@ public class PostServiceImpl implements PostService {
                            NotificationRepository notificationRepository,
                            BookmarkRepository bookmarkRepository,
                            PostLikeRepository postLikeRepository,
-                           CommentRepository commentRepository) {
+                           CommentRepository commentRepository,
+                           com.example.blogsystem.service.TranslationService translationService) {
         this.postRepository = postRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
@@ -46,6 +48,7 @@ public class PostServiceImpl implements PostService {
         this.bookmarkRepository = bookmarkRepository;
         this.postLikeRepository = postLikeRepository;
         this.commentRepository = commentRepository;
+        this.translationService = translationService;
     }
 
     @Override
@@ -123,6 +126,16 @@ public class PostServiceImpl implements PostService {
             }
 
             post.setUser(currentUser);
+
+            // Detect source language for the post
+            try {
+                String textToDetect = (post.getTitle() != null ? post.getTitle() + " " : "") + (post.getContent() != null ? post.getContent() : "");
+                String detectedLang = translationService.detectLanguage(textToDetect);
+                post.setSourceLanguage(detectedLang);
+            } catch (Exception langEx) {
+                log.warn("Language detection failed during post creation: {}", langEx.getMessage());
+                post.setSourceLanguage("vi");
+            }
 
             return postRepository.save(post);
         } catch (Exception e) {
