@@ -9,12 +9,12 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "songs")
+@Table(name = "soundscapes")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Song {
+public class Soundscape {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,21 +23,31 @@ public class Song {
     @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false)
-    private String artist;
+    @Column(length = 255)
+    private String location; // Ví dụ: "Hà Nội", "Sài Gòn", "Đà Lạt", "Cát Tiên"
 
-    @Column(nullable = false)
-    private String genre;
-
-    private String genreColor;
-
-    private String coverUrl;
+    @Column(nullable = false, length = 50)
+    private String category; // RAIN, CAFE, NATURE, URBAN, OCEAN, SUMMER
 
     @Column(nullable = false, length = 1000)
     private String audioUrl;
 
     @Column(length = 1000)
-    private String fallbackAudioUrl;
+    private String imageUrl;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Column(length = 255)
+    private String creatorName; // Tên người thu âm thực tế (Field Recorder)
+
+    private Long userId;
+
+    @Builder.Default
+    private Long likesCount = 0L;
+
+    @Builder.Default
+    private Long playsCount = 0L;
 
     private Integer durationSeconds;
 

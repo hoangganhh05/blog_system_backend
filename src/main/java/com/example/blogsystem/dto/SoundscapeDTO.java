@@ -11,22 +11,18 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SongDTO {
+public class SoundscapeDTO {
     private Long id;
     private String title;
-    private String artist;
-    private String genre;
-    private String genreColor;
-    
-    private String cover;
-    private String coverUrl;
-    
-    private String src;
+    private String location;
+    private String category;
     private String audioUrl;
-    
-    private String fallbackSrc;
-    private String fallbackAudioUrl;
-    
+    private String imageUrl;
+    private String description;
+    private String creatorName;
+    private Long userId;
+    private Long likesCount;
+    private Long playsCount;
     private Integer durationSeconds;
     private Boolean isActive;
     private LocalDateTime createdAt;
