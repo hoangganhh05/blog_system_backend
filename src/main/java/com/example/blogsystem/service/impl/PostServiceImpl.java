@@ -274,4 +274,70 @@ public class PostServiceImpl implements PostService {
     public Page<Post> searchPosts(String query, Pageable pageable) {
         return postRepository.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(query, query, pageable);
     }
+
+    @Override
+    public Page<Post> getRecommendedShortsFeed(int page, int size, List<Long> excludeIds, Long currentUserId) {
+        List<Post> allVideos = postRepository.findAllVideoPostsWithRelations();
+        if (allVideos == null || allVideos.isEmpty()) {
+            return Page.empty();
+        }
+
+        // Lọc bỏ những video đã xem trong phiên nếu vẫn còn video ứng viên chưa xem
+        List<Post> candidateList = allVideos;
+        if (excludeIds != null && !excludeIds.isEmpty()) {
+            java.util.Set<Long> excludeSet = new java.util.HashSet<>(excludeIds);
+            List<Post> filtered = allVideos.stream()
+                    .filter(p -> p != null && p.getId() != null && !excludeSet.contains(p.getId()))
+                    .toList();
+            if (!filtered.isEmpty()) {
+                candidateList = filtered;
+            }
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        java.util.Random random = new java.util.Random();
+
+        // Xếp hạng đề xuất theo Engagement Score + Time Decay + Exploration
+        List<Post> ranked = candidateList.stream().sorted((p1, p2) -> {
+            double s1 = computeRecommendationScore(p1, now, random);
+            double s2 = computeRecommendationScore(p2, now, random);
+            return Double.compare(s2, s1); // Điểm cao nhất lên trước
+        }).toList();
+
+        int start = Math.min(page * size, ranked.size());
+        int end = Math.min(start + size, ranked.size());
+        List<Post> pageContent = ranked.subList(start, end);
+
+        return new org.springframework.data.domain.PageImpl<>(
+                pageContent,
+                org.springframework.data.domain.PageRequest.of(page, size),
+                ranked.size()
+        );
+    }
+
+    private double computeRecommendationScore(Post post, LocalDateTime now, java.util.Random random) {
+        if (post == null || post.getId() == null) return 0.0;
+        long likes = 0;
+        try { likes = postLikeRepository.countByPostId(post.getId()); } catch (Exception ignored) {}
+        long comments = 0;
+        try { comments = commentRepository.countByPostId(post.getId()); } catch (Exception ignored) {}
+        long shares = 0;
+        try { shares = postRepository.countBySharedPostId(post.getId()); } catch (Exception ignored) {}
+        long views = post.getViewCount() != null ? post.getViewCount() : 0;
+
+        long ageHours = 0;
+        if (post.getCreatedAt() != null) {
+            ageHours = Math.max(0, java.time.Duration.between(post.getCreatedAt(), now).toHours());
+        }
+        // HackerNews/TikTok Gravity Time Decay Formula
+        double timeDecay = 1.0 / Math.pow(ageHours + 2.0, 1.15);
+
+        // Engagement Score: Trọng số tương tác
+        double engagement = (likes * 3.0) + (comments * 4.0) + (shares * 5.0) + (views * 0.5) + 1.0;
+
+        // Exploration Factor: Dao động ngẫu nhiên 20% giúp phân phối video mới
+        double exploration = 0.85 + (random.nextDouble() * 0.30);
+
+        return engagement * timeDecay * exploration;
+    }
 }

@@ -39,4 +39,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("SELECT COUNT(DISTINCT p) FROM Post p WHERE p.category.id = :categoryId")
     Long countPostsByCategory(Long categoryId);
+
+    @Query("SELECT DISTINCT p FROM Post p " +
+           "LEFT JOIN FETCH p.user " +
+           "LEFT JOIN FETCH p.category " +
+           "WHERE ((p.videoUrl IS NOT NULL AND TRIM(p.videoUrl) != '') " +
+           "OR p.mediaType = 'video' " +
+           "OR (p.thumbNail IS NOT NULL AND (p.thumbNail LIKE '%.mp4%' OR p.thumbNail LIKE '%.webm%' OR p.thumbNail LIKE '%.mov%')))")
+    List<Post> findAllVideoPostsWithRelations();
 }

@@ -79,6 +79,23 @@ public class PostController {
             return Page.empty();
         }
     }
+
+    @GetMapping("/feed/shorts")
+    public ResponseEntity<Page<PostDTO>> getRecommendedShorts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) List<Long> excludeIds) {
+        try {
+            Long userId = null;
+            try { userId = currentUser.id(); } catch (Exception ignored) {}
+            Page<PostDTO> result = postService.getRecommendedShortsFeed(page, size, excludeIds, userId)
+                    .map(this::toPostDTOWithCounts);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Lỗi lấy danh sách shorts đề xuất: ", e);
+            return ResponseEntity.ok(Page.empty());
+        }
+    }
     @GetMapping("/search")
     public Page<PostDTO> searchPosts(@RequestParam String query, Pageable pageable) {
         try {

@@ -21,4 +21,5 @@ public interface PostService {
     Page<Post> searchPosts(String query, Pageable pageable);
 
     Post incrementViewCount(Long id);
+    Page<Post> getRecommendedShortsFeed(int page, int size, java.util.List<Long> excludeIds, Long currentUserId);
 }
