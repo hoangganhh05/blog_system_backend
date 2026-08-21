@@ -31,7 +31,7 @@ public class AiServiceImpl implements AiService {
     @Value("${GEMINI_API_KEY:${gemini.api-key:}}")
     private String rawApiKey;
 
-    @Value("${GEMINI_MODEL:${gemini.model:gemini-3.7-flash}}")
+    @Value("${GEMINI_MODEL:${gemini.model:gemini-2.5-flash}}")
     private String rawModel;
 
     private final RestTemplate restTemplate;
@@ -40,12 +40,12 @@ public class AiServiceImpl implements AiService {
 
     public AiServiceImpl() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(30_000); // 30s
-        factory.setReadTimeout(60_000);    // 60s
+        factory.setConnectTimeout(10_000); // 10s connect
+        factory.setReadTimeout(30_000);    // 30s read
         this.restTemplate = new RestTemplate(factory);
 
         this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(30))
+                .connectTimeout(Duration.ofSeconds(10))
                 .build();
     }
 
@@ -54,7 +54,7 @@ public class AiServiceImpl implements AiService {
     }
 
     private String getCleanModelName() {
-        String modelName = "gemini-3.7-flash";
+        String modelName = "gemini-2.5-flash";
         if (rawModel != null && !rawModel.trim().isEmpty()) {
             modelName = rawModel.replace("models/", "").replace("model/", "").trim();
         }
@@ -72,54 +72,24 @@ public class AiServiceImpl implements AiService {
 
     private String getSystemPrompt() {
         return """
-                Bạn là Trợ lý AI thông minh, thân thiện của mạng xã hội BlogViet (https://anhhoangg.id.vn/).
-                Sứ mệnh: Hướng dẫn người dùng trải nghiệm nền tảng, hỗ trợ sáng tạo nội dung, giải đáp thắc mắc, phân tích hình ảnh đính kèm (ảnh chụp màn hình lỗi, ảnh bài viết, tác phẩm nghệ thuật, meme...) về cách sử dụng mạng xã hội BlogViet.
+                Bạn là Trợ lý AI của mạng xã hội BlogViet (https://anhhoangg.id.vn/).
+                Sứ mệnh: Hướng dẫn người dùng trải nghiệm nền tảng, hỗ trợ sáng tạo nội dung, giải đáp thắc mắc, phân tích hình ảnh đính kèm (ảnh chụp màn hình, ảnh bài viết, meme...).
 
-                QUY TẮC CỐT LÕI (TUYỆT ĐỐI TUÂN THỦ):
-                1. TUYỆT ĐỐI KHÔNG NHẮC ĐẾN CÔNG NGHỆ: 
-                   - CẤM mọi từ ngữ kỹ thuật lập trình như: React, Vite, Spring Boot, Java, MySQL, database, API, backend, frontend, server, code, RESTful, token, JWT, Entity, mã nguồn...
-                   - Mọi câu trả lời PHẢI đứng hoàn toàn từ góc nhìn Giao diện người dùng (UI/UX), tính năng trực quan, vị trí nút bấm và thao tác tương tác thực tế trên màn hình.
-                2. VĂN PHONG TỰ NHIÊN, KHÔNG DÙNG VĂN MẪU MÁY MÓC:
-                   - Đi thẳng vào vấn đề, trả lời trực tiếp câu hỏi ngay câu đầu tiên.
-                   - Không lặp lại các câu mở đầu rập khuôn ("Chào bạn...", "Tôi là một mô hình AI...", "Tôi rất vui..."). Chỉ chào khi người dùng chào trước.
-                   - Phong cách tinh tế, thân thiện, súc tích, chuyên nghiệp như một hướng dẫn viên mạng xã hội tận tâm. Trình bày rõ ràng (dùng gạch đầu dòng Markdown khi cần).
+                QUY TẮC CỐT LÕI:
+                1. TUYỆT ĐỐI KHÔNG DÙNG TỪ NGỮ KỸ THUẬT: Cấm nhắc đến React, Vite, Spring Boot, Java, MySQL, database, API, backend, frontend, server, code, token... Mọi câu trả lời đứng từ góc nhìn Giao diện người dùng (UI) và tính năng thực tế.
+                2. VĂN PHONG TỰ NHIÊN, SÚC TÍCH: Đi thẳng vào trọng tâm câu hỏi, thân thiện, chuyên nghiệp, hỗ trợ định dạng Markdown rõ ràng.
 
-                CẨM NANG VỊ TRÍ GIAO DIỆN & TÍNH NĂNG BLOGVIET:
-                • GÓC TRÊN CÙNG BÊN PHẢI (Thanh Navbar):
-                  - Nút "+ Đăng bài" (màu đen/trắng nổi bật): Mở khung soạn thảo bài viết mới (kèm tiêu đề, ảnh bìa, chủ đề hashtag và nội dung).
-                  - Biểu tượng AI (✨): Nhấp để nhận gợi ý ý tưởng viết bài hoặc hỗ trợ nhanh.
-                  - Biểu tượng Chuông (🔔): Xem thông báo lượt thích, bình luận, chia sẻ và kết bạn mới.
-                  - Avatar cá nhân: Nhấp vào để xem menu mở rộng (Trang cá nhân, Cài đặt & Bảo mật, Đổi giao diện Sáng/Tối, Đăng xuất).
-
-                • CỘT BÊN TRÁI (Menu điều hướng & Lối tắt):
-                  - Thẻ cá nhân thu gọn: Xem nhanh Avatar, @username, số bài viết, lượt xem và bạn bè.
-                  - Bảng tin trang chủ: Xem dòng thời gian bài viết với 2 tab "Dành cho bạn" (bài viết chung toàn trang) và "Đang theo dõi" (chỉ hiển thị bài của bạn bè đang follow).
-                  - Khám phá xu hướng: Khám phá các bài viết hot và xu hướng mới nhất.
-                  - Phòng nhạc & Radio: Thưởng thức không gian nghe nhạc Vinahouse, Lofi và Ballad toàn màn hình.
-                  - Bạn bè & Kết nối: Quản lý danh sách bạn bè, tìm kiếm thành viên và gửi lời mời kết bạn.
-                  - Bài viết đã lưu: Xem lại các bài viết bạn đã bookmark đánh dấu trang.
-                  - Bảng điều khiển: Xem chi tiết biểu đồ thống kê tương tác tài khoản.
-                  - Chủ đề thịnh hành (#Vinahouse, #IT, #Chung, #LapTrinh, #AI...): Nhấp vào bất kỳ hashtag nào để lọc ngay các bài viết cùng chủ đề.
-
-                • CỘT BÊN PHẢI (Tiện ích & Trình phát nhạc):
-                  - Mini Music Player: Trình phát nhạc mini tích hợp nghe nhạc trực tiếp ngay khi lướt web (hỗ trợ tìm bài hát, đổi bài, chỉnh âm lượng, xem thể loại Pop Ballad, Vinahouse, Nhạc Trẻ, Lofi).
-                  - Gợi ý cho bạn: Danh sách các tác giả nổi bật kèm nút "Theo dõi" nhanh 1 chạm.
-
-                • BONG BÓNG CHAT Ở GÓC DƯỚI BÊN PHẢI (💬):
-                  - Nhấp để mở Khung chat nhắn tin: Trò chuyện trực tiếp với bạn bè hoặc với Trợ lý AI BlogViet, gọi thoại / gọi video HD, gửi tin nhắn thoại (Voice note), gửi hình ảnh và kho ảnh GIF động vui nhộn.
-
-                • TƯƠNG TÁC DƯỚI MỖI BÀI VIẾT:
-                  - Thả tim / Cảm xúc: Rê chuột để xem danh sách nhanh những người đã thích, nhấp chuột để mở bảng chi tiết phân loại cảm xúc (Tất cả, Thích, Yêu thích, Haha, Wow, Buồn, Phẫn nộ).
-                  - Bình luận: Viết câu trả lời, gửi kèm kho ảnh GIF động sống động.
-                  - Chia sẻ: Đăng lại bài viết có trích dẫn, gửi bài viết qua tin nhắn cho bạn bè hoặc sao chép liên kết.
-                  - Lưu bài: Đánh dấu bài viết vào danh mục Đã lưu để đọc lại sau.
-                  - Tóm tắt AI (nút ✨ ở góc bài viết): Tự động tóm tắt ý chính của bài viết dài chỉ trong vài giây.
+                TÍNH NĂNG BLOGVIET NỔI BẬT:
+                • Nút (+ Đăng bài) ở góc trên bên phải để soạn bài viết mới kèm ảnh/video/hashtag.
+                • Menu điều hướng: Bảng tin (Dành cho bạn, Đang theo dõi), Shorts (Video ngắn), Trạm Âm Thanh (/soundscapes - nghe âm thanh thực địa mưa, cafe, sóng biển, rừng thông), Bạn bè, Bài viết đã lưu, Bảng điều khiển.
+                • Bong bóng Chat ở góc dưới bên phải để nhắn tin, gọi thoại/video HD với bạn bè hoặc AI.
+                • Dưới mỗi bài viết có nút Thả tim cảm xúc, Bình luận ảnh GIF, Chia sẻ và Tóm tắt AI (✨).
                 """;
     }
 
     private Map<String, Object> buildRequestBody(String prompt, String imageBase64, String imageMimeType) {
         String actualPrompt = prompt != null && !prompt.trim().isEmpty() ? prompt.trim() : "Hãy phân tích hình ảnh này giúp tôi.";
-        String combinedPrompt = getSystemPrompt().trim() + "\n\n---\nNội dung câu hỏi của người dùng:\n" + actualPrompt;
+        String combinedPrompt = getSystemPrompt().trim() + "\n\n---\nCâu hỏi của người dùng:\n" + actualPrompt;
 
         List<Map<String, Object>> partsList = new ArrayList<>();
         partsList.add(Collections.singletonMap("text", combinedPrompt));
@@ -149,7 +119,6 @@ public class AiServiceImpl implements AiService {
         contentMap.put("parts", partsList);
         body.put("contents", Collections.singletonList(contentMap));
 
-        // Tối ưu các tham số tạo sinh (Generation Parameters)
         Map<String, Object> generationConfig = new HashMap<>();
         generationConfig.put("temperature", 0.7);
         generationConfig.put("topK", 40);
@@ -182,12 +151,10 @@ public class AiServiceImpl implements AiService {
         Map<String, Object> body = buildRequestBody(prompt, imageBase64, imageMimeType);
 
         List<String> targetUrls = Arrays.asList(
-                "https://generativelanguage.googleapis.com/v1/models/" + modelName + ":generateContent?key=" + apiKey,
                 "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + apiKey,
-                "https://generativelanguage.googleapis.com/v1/models/gemini-3.6-flash:generateContent?key=" + apiKey,
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" + apiKey,
-                "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=" + apiKey,
-                "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=" + apiKey
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey,
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + apiKey,
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey
         );
 
         String lastErrorMsg = "";
@@ -257,9 +224,9 @@ public class AiServiceImpl implements AiService {
 
         List<String> streamUrls = Arrays.asList(
                 "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":streamGenerateContent?alt=sse&key=" + apiKey,
-                "https://generativelanguage.googleapis.com/v1/models/" + modelName + ":streamGenerateContent?alt=sse&key=" + apiKey,
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:streamGenerateContent?alt=sse&key=" + apiKey,
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=" + apiKey
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=" + apiKey,
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=" + apiKey,
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?alt=sse&key=" + apiKey
         );
 
         boolean streamedAny = false;
@@ -272,7 +239,7 @@ public class AiServiceImpl implements AiService {
                 HttpRequest request = HttpRequest.newBuilder()
                         .uri(URI.create(url))
                         .header("Content-Type", "application/json")
-                        .timeout(Duration.ofSeconds(60))
+                        .timeout(Duration.ofSeconds(20))
                         .POST(HttpRequest.BodyPublishers.ofString(jsonPayload, StandardCharsets.UTF_8))
                         .build();
 
