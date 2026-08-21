@@ -32,6 +32,8 @@ public class DTOMapper {
         dto.setImageUrls(imgs);
         dto.setStatus(post.getStatus());
         dto.setBgColor(post.getBgColor());
+        dto.setVideoUrl(post.getVideoUrl());
+        dto.setMediaType(post.getMediaType());
         dto.setCreatedAt(post.getCreatedAt());
         dto.setUpdatedAt(post.getUpdatedAt());
         dto.setViewCount(post.getViewCount());

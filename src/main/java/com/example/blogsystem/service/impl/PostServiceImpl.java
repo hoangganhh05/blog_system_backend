@@ -160,6 +160,12 @@ public class PostServiceImpl implements PostService {
         if (post.getBgColor() != null) {
             existingPost.setBgColor(post.getBgColor());
         }
+        if (post.getVideoUrl() != null) {
+            existingPost.setVideoUrl(post.getVideoUrl());
+        }
+        if (post.getMediaType() != null) {
+            existingPost.setMediaType(post.getMediaType());
+        }
         if (post.getCategory() != null && post.getCategory().getId() != null) {
             Category cat = categoryRepository.findById(post.getCategory().getId()).orElse(null);
             existingPost.setCategory(cat);

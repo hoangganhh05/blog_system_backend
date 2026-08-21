@@ -18,6 +18,8 @@ public class PostDTO {
     private java.util.List<String> imageUrls = new java.util.ArrayList<>();
     private String status;
     private String bgColor;
+    private String videoUrl;
+    private String mediaType;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Integer viewCount;

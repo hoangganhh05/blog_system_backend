@@ -26,6 +26,12 @@ public class Post {
     private String thumbNail;
     private String status;
     private String bgColor;
+
+    @Column(name = "video_url")
+    private String videoUrl;
+
+    @Column(name = "media_type")
+    private String mediaType;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
