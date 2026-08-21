@@ -32,6 +32,8 @@ public class PostServiceImpl implements PostService {
     private final PostLikeRepository postLikeRepository;
     private final CommentRepository commentRepository;
     private final com.example.blogsystem.service.TranslationService translationService;
+    private final com.example.blogsystem.service.R2StorageService r2StorageService;
+    private final com.example.blogsystem.repository.PostTranslationRepository postTranslationRepository;
 
     public PostServiceImpl(PostRepository postRepository,
                            CategoryRepository categoryRepository,
@@ -40,7 +42,9 @@ public class PostServiceImpl implements PostService {
                            BookmarkRepository bookmarkRepository,
                            PostLikeRepository postLikeRepository,
                            CommentRepository commentRepository,
-                           com.example.blogsystem.service.TranslationService translationService) {
+                           com.example.blogsystem.service.TranslationService translationService,
+                           com.example.blogsystem.service.R2StorageService r2StorageService,
+                           com.example.blogsystem.repository.PostTranslationRepository postTranslationRepository) {
         this.postRepository = postRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
@@ -49,6 +53,8 @@ public class PostServiceImpl implements PostService {
         this.postLikeRepository = postLikeRepository;
         this.commentRepository = commentRepository;
         this.translationService = translationService;
+        this.r2StorageService = r2StorageService;
+        this.postTranslationRepository = postTranslationRepository;
     }
 
     @Override
@@ -193,8 +199,33 @@ public class PostServiceImpl implements PostService {
     public void deletePost(Long id) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy bài viết với id: " + id));
+
+        // 1. Thu thập tất cả URL media thuộc về bài viết trước khi xóa record
+        java.util.Set<String> mediaUrls = new java.util.HashSet<>();
+        if (post.getVideoUrl() != null && !post.getVideoUrl().isBlank()) {
+            mediaUrls.add(post.getVideoUrl());
+        }
+        if (post.getThumbNail() != null && !post.getThumbNail().isBlank()) {
+            mediaUrls.add(post.getThumbNail());
+        }
+        if (post.getImageUrls() != null && !post.getImageUrls().isEmpty()) {
+            for (String imgUrl : post.getImageUrls()) {
+                if (imgUrl != null && !imgUrl.isBlank()) {
+                    mediaUrls.add(imgUrl);
+                }
+            }
+        }
+
+        // 2. Xóa các tệp tin media tương ứng khỏi Cloudflare R2
+        for (String url : mediaUrls) {
+            try {
+                r2StorageService.deleteFileByUrl(url);
+            } catch (Exception e) {
+                log.warn("Không thể xóa media URL [{}] khỏi Cloudflare R2 cho post ID {}: {}", url, id, e.getMessage());
+            }
+        }
         
-        // 1. Dọn dẹp các ràng buộc khóa ngoại trước khi xóa post
+        // 3. Dọn dẹp các bảng quan hệ phụ phụ thuộc khóa ngoại trước khi xóa post
         try {
             notificationRepository.deleteByPostId(id);
         } catch (Exception e) {
@@ -215,8 +246,13 @@ public class PostServiceImpl implements PostService {
         } catch (Exception e) {
             log.warn("Không thể xóa comments cho post: {}", id, e);
         }
+        try {
+            postTranslationRepository.deleteByPostId(id);
+        } catch (Exception e) {
+            log.warn("Không thể xóa bản dịch cho post: {}", id, e);
+        }
 
-        // 2. Gỡ liên kết bài viết được chia sẻ nếu có bài viết khác đang trỏ tới bài này
+        // 4. Gỡ liên kết bài viết được chia sẻ nếu có bài viết khác đang trỏ tới bài này
         try {
             List<Post> reposts = postRepository.findBySharedPostId(id);
             if (reposts != null && !reposts.isEmpty()) {
@@ -229,8 +265,9 @@ public class PostServiceImpl implements PostService {
             log.warn("Không thể gỡ liên kết reposts cho post: {}", id, e);
         }
 
+        // 5. Xóa bài viết khỏi Database
         postRepository.delete(post);
-        log.info("✅ Đã xóa thành công bài viết ID: {}", id);
+        log.info("✅ Đã xóa thành công bài viết ID: {} cùng tất cả tệp media trên Cloudflare R2", id);
     }
 
     @Override

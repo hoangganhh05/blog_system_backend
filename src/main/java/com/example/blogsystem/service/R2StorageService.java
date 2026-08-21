@@ -61,4 +61,83 @@ public class R2StorageService {
             throw new RuntimeException("Lỗi tải tệp tin lên máy chủ lưu trữ R2: " + e.getMessage(), e);
         }
     }
+
+    /**
+     * Xóa tệp tin khỏi Cloudflare R2 thông qua Object Key.
+     */
+    public void deleteFileByKey(String key) {
+        if (key == null || key.isBlank()) {
+            return;
+        }
+        try {
+            // Chuẩn hóa key
+            String cleanKey = key.replaceAll("^/+", "");
+            log.info("Deleting R2 object key: {} from bucket: {}", cleanKey, bucketName);
+
+            s3Client.deleteObject(
+                software.amazon.awssdk.services.s3.model.DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(cleanKey)
+                    .build()
+            );
+            log.info("Successfully deleted R2 object key: {}", cleanKey);
+        } catch (Exception e) {
+            log.warn("Lỗi khi xóa file khỏi Cloudflare R2 với key [{}]: {}", key, e.getMessage());
+        }
+    }
+
+    /**
+     * Xóa tệp tin khỏi Cloudflare R2 bằng URL hoàn chỉnh.
+     */
+    public void deleteFileByUrl(String fileUrl) {
+        if (fileUrl == null || fileUrl.isBlank()) {
+            return;
+        }
+        try {
+            String key = extractKeyFromUrl(fileUrl);
+            if (key != null && !key.isBlank()) {
+                deleteFileByKey(key);
+            } else {
+                log.warn("Không thể tách object key hợp lệ từ URL: {}", fileUrl);
+            }
+        } catch (Exception e) {
+            log.warn("Không thể xử lý xóa tệp tin R2 bằng URL [{}]: {}", fileUrl, e.getMessage());
+        }
+    }
+
+    /**
+     * Tách Object Key từ file URL công khai của R2.
+     */
+    public String extractKeyFromUrl(String fileUrl) {
+        if (fileUrl == null || fileUrl.isBlank()) {
+            return null;
+        }
+        String baseUrl = publicUrl != null ? publicUrl.replaceAll("/+$", "") : "";
+        if (!baseUrl.isBlank() && fileUrl.startsWith(baseUrl)) {
+            String relativePath = fileUrl.substring(baseUrl.length());
+            return relativePath.replaceAll("^/+", "");
+        }
+        // Trường hợp URL chứa domain / path chung
+        if (fileUrl.contains("r2.dev/")) {
+            return fileUrl.substring(fileUrl.indexOf("r2.dev/") + "r2.dev/".length()).replaceAll("^/+", "");
+        }
+        if (fileUrl.contains("r2.cloudflarestorage.com/")) {
+            String path = fileUrl.substring(fileUrl.indexOf("r2.cloudflarestorage.com/") + "r2.cloudflarestorage.com/".length());
+            if (path.startsWith(bucketName + "/")) {
+                path = path.substring((bucketName + "/").length());
+            }
+            return path.replaceAll("^/+", "");
+        }
+        // Fallback: Lấy phần path sau domain nếu có dạng http://domain.com/folder/file.ext
+        if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://")) {
+            try {
+                java.net.URI uri = new java.net.URI(fileUrl);
+                String path = uri.getPath();
+                if (path != null && !path.isBlank()) {
+                    return path.replaceAll("^/+", "");
+                }
+            } catch (Exception ignored) {}
+        }
+        return null;
+    }
 }
